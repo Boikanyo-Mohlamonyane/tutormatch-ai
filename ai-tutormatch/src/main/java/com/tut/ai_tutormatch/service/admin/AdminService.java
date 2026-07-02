@@ -1,0 +1,354 @@
+package com.tut.ai_tutormatch.service.admin;
+
+import com.tut.ai_tutormatch.dto.*;
+import com.tut.ai_tutormatch.enums.Role;
+
+import com.tut.ai_tutormatch.model.*;
+
+import com.tut.ai_tutormatch.repository.*;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class AdminService {
+    @Autowired
+    private SubjectRepository subjectRepo;
+    @Autowired
+    private UserRepository userRepo;
+    @Autowired
+    private TutorSubjectRepository tutorSubjectRepo;
+    @Autowired
+    private StudentRepository studentRepo;
+
+    @Autowired
+    private AdminRepository adminRepo;
+
+    @Autowired
+    private TutorRepository tutorRepo;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+
+    @Autowired
+    private SessionBookingRepository bookingRepo;
+    // =========================================
+    // CREATE ADMIN
+    // =========================================
+
+
+    public String createSubject(CreateSubjectRequest request) {
+
+        Optional<Subject> existing =
+                subjectRepo.findBySubjectCode(
+                        request.getSubjectCode()
+                );
+
+        if (existing.isPresent()) {
+            return "Subject already exists";
+        }
+
+        Subject subject = new Subject();
+
+        subject.setSubjectCode(
+                request.getSubjectCode()
+        );
+
+        subject.setSubjectName(
+                request.getSubjectName()
+        );
+
+        subject.setDescription(
+                request.getDescription()
+        );
+
+        subjectRepo.save(subject);
+
+        return "Subject created successfully";
+    }
+    public String createAdmin(CreateAdminRequest request) {
+
+        // CHECK IF EMAIL EXISTS
+        Optional<User> existingUser =
+                userRepo.findByEmail(request.getEmail());
+
+        if (existingUser.isPresent()) {
+            return "Error: Email already exists!";
+        }
+
+        // CREATE LOGIN ACCOUNT
+        User user = new User();
+        user.setEmail(request.getEmail());
+
+        // ENCRYPT PASSWORD
+        user.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
+
+        // SET ROLE
+        user.setRole(Role.ADMIN);
+
+        // SAVE USER
+        userRepo.save(user);
+
+        // CREATE ADMIN PROFILE
+        Admin admin = new Admin();
+        admin.setName(request.getName());
+        admin.setSurname(request.getSurname());
+
+        // USE REQUEST VALUE
+        admin.setDepartment(request.getDepartment());
+
+        // LINK USER
+        admin.setUser(user);
+
+        // SAVE ADMIN
+        adminRepo.save(admin);
+
+        return "Admin created successfully";
+    }
+    public AdminDashboardResponse getDashboardStats() {
+
+        Long totalStudents = studentRepo.count();
+
+        Long totalTutors = tutorRepo.count();
+
+        Long totalSubjects = subjectRepo.count();
+
+        Long totalBookings = bookingRepo.count();
+
+        Long totalAdmins = adminRepo.count();
+
+        Long highRiskStudents =
+                studentRepo.countByRiskLevel("HIGH");
+
+        Double averagePerformance =
+                studentRepo.getAverageAcademicPerformance();
+
+        if (averagePerformance == null) {
+            averagePerformance = 0.0;
+        }
+
+        return new AdminDashboardResponse(
+                totalStudents,
+                totalTutors,
+                totalSubjects,
+                totalBookings,
+                totalAdmins,
+                averagePerformance,
+                highRiskStudents
+        );
+    }
+    // =========================================
+    // CREATE TUTOR
+    // =========================================
+    public String createTutor(CreateTutorRequest request) {
+
+        // CHECK IF EMAIL EXISTS
+        Optional<User> existingUser =
+                userRepo.findByEmail(request.getEmail());
+
+        if (existingUser.isPresent()) {
+            return "Error: Email already exists!";
+        }
+
+        // CREATE LOGIN ACCOUNT
+        User user = new User();
+        user.setEmail(request.getEmail());
+
+        // ENCRYPT PASSWORD
+        user.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
+
+        // SET ROLE
+        user.setRole(Role.TUTOR);
+
+        // SAVE USER
+        userRepo.save(user);
+
+        // CREATE TUTOR PROFILE
+        Tutor tutor = new Tutor();
+
+        tutor.setEmployeeNumber(
+                request.getEmployeeNumber()
+        );
+
+        tutor.setName(request.getName());
+
+        tutor.setSurname(request.getSurname());
+
+        tutor.setSpecialization(
+                request.getSpecialization()
+        );
+
+        tutor.setYearsExperience(
+                request.getYearsExperience()
+        );
+
+        // LINK USER
+        tutor.setUser(user);
+
+        // SAVE TUTOR
+        tutorRepo.save(tutor);
+
+        return "Tutor created successfully";
+    }
+
+    public String assignSubjectToTutor(
+            AssignTutorSubjectRequest request
+    ) {
+
+        // FIND TUTOR
+        Tutor tutor = tutorRepo.findById(
+                request.getTutorId()
+        ).orElseThrow(() ->
+                new RuntimeException("Tutor not found")
+        );
+
+        // FIND SUBJECT
+        Subject subject = subjectRepo.findById(
+                request.getSubjectId()
+        ).orElseThrow(() ->
+                new RuntimeException("Subject not found")
+        );
+
+        // CREATE RELATIONSHIP
+        TutorSubject tutorSubject =
+                new TutorSubject();
+
+        tutorSubject.setTutor(tutor);
+
+        tutorSubject.setSubject(subject);
+
+        // SAVE
+        tutorSubjectRepo.save(tutorSubject);
+
+        return "Subject assigned to tutor successfully";
+    }
+
+    // GET ALL STUDENTS
+
+    public List<Student> getAllStudents() {
+
+        return studentRepo.findAll();
+    }
+
+// GET ALL TUTORS
+// =========================================
+    public List<Tutor> getAllTutors() {
+
+        return tutorRepo.findAll();
+    }
+
+    // =========================================
+// GET ALL BOOKINGS
+// =========================================
+    public List<SessionBooking> getAllBookings() {
+
+        return bookingRepo.findAll();
+    }
+
+    // =========================================
+// DELETE STUDENT
+// =========================================
+    public String deleteStudent(Long studentId) {
+
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Student not found"));
+
+        studentRepo.delete(student);
+
+        return "Student deleted successfully";
+    }
+
+    // =========================================
+// DELETE TUTOR
+// =========================================
+    public String deleteTutor(Long tutorId) {
+
+        Tutor tutor = tutorRepo.findById(tutorId)
+                .orElseThrow(() ->
+                        new RuntimeException("Tutor not found"));
+
+        tutorRepo.delete(tutor);
+
+        return "Tutor deleted successfully";
+    }
+
+    // =========================================
+// DELETE SUBJECT
+// =========================================
+    public String deleteSubject(Long subjectId) {
+
+        Subject subject = subjectRepo.findById(subjectId)
+                .orElseThrow(() ->
+                        new RuntimeException("Subject not found"));
+
+        subjectRepo.delete(subject);
+
+        return "Subject deleted successfully";
+    }
+
+    // =========================================
+// UPDATE SUBJECT
+// =========================================
+    public String updateSubject(
+            Long subjectId,
+            CreateSubjectRequest request
+    ) {
+
+        Subject subject = subjectRepo.findById(subjectId)
+                .orElseThrow(() ->
+                        new RuntimeException("Subject not found"));
+
+        subject.setSubjectCode(request.getSubjectCode());
+
+        subject.setSubjectName(request.getSubjectName());
+
+        subject.setDescription(request.getDescription());
+
+        subjectRepo.save(subject);
+
+        return "Subject updated successfully";
+    }
+
+    // =========================================
+// APPROVE BOOKING
+// =========================================
+    public String approveBooking(Long bookingId) {
+
+        SessionBooking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() ->
+                        new RuntimeException("Booking not found"));
+
+        booking.setStatus("APPROVED");
+
+        bookingRepo.save(booking);
+
+        return "Booking approved successfully";
+    }
+
+    // =========================================
+// REJECT BOOKING
+// =========================================
+    public String rejectBooking(Long bookingId) {
+
+        SessionBooking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() ->
+                        new RuntimeException("Booking not found"));
+
+        booking.setStatus("REJECTED");
+
+        bookingRepo.save(booking);
+
+        return "Booking rejected successfully";
+    }
+
+}
