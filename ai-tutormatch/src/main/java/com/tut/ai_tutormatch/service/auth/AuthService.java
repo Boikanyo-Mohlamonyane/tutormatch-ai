@@ -56,9 +56,7 @@ public class AuthService {
 
         Student student = new Student();
 
-        student.setStudentNumber(
-                auth.getStudentNumber()
-        );
+
 
         student.setName(
                 auth.getName()
@@ -86,7 +84,11 @@ public class AuthService {
 
         // SAVE STUDENT
         studentRepo.save(student);
+        student.setStudentNumber(
+                "STU" + String.format("%04d", student.getStudentId())
+        );
 
+        studentRepo.save(student);
         return "Successfully registered student: "
                 + user.getEmail();
     }

@@ -1,0 +1,92 @@
+version: "3.9"
+
+services:
+
+postgres:
+image: postgres:16
+container_name: aitutormatch-db
+
+
+restart: always
+
+environment:
+  POSTGRES_DB: aitutormatch
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: root
+
+ports:
+  - "5432:5432"
+
+volumes:
+  - postgres_data:/var/lib/postgresql/data
+
+networks:
+  - aitutormatch-network
+
+
+backend:
+build:
+context: ./backend
+
+
+container_name: aitutormatch-backend
+
+restart: always
+
+depends_on:
+  - postgres
+  - ml-service
+
+ports:
+  - "8080:8080"
+
+environment:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aitutormatch
+  SPRING_DATASOURCE_USERNAME: postgres
+  SPRING_DATASOURCE_PASSWORD: root
+
+  # ML Service URL
+  ML_SERVICE_URL: http://ml-service:5000
+
+networks:
+  - aitutormatch-network
+
+
+frontend:
+build:
+context: ./frontend
+
+
+container_name: aitutormatch-frontend
+
+restart: always
+
+depends_on:
+  - backend
+
+ports:
+  - "3000:80"
+
+networks:
+  - aitutormatch-network
+
+
+ml-service:
+build:
+context: ./ml-service
+
+container_name: aitutormatch-ml
+
+restart: always
+
+ports:
+  - "5000:5000"
+
+networks:
+  - aitutormatch-network
+
+volumes:
+postgres_data:
+
+networks:
+aitutormatch-network:
