@@ -1,5 +1,7 @@
 package com.tut.ai_tutormatch.config;
 
+import com.tut.ai_tutormatch.enums.AdminPosition;
+import com.tut.ai_tutormatch.enums.Department;
 import com.tut.ai_tutormatch.enums.Role;
 
 import com.tut.ai_tutormatch.model.Admin;
@@ -62,7 +64,11 @@ public class DataSeeder implements CommandLineRunner {
 
             admin.setName("System");
             admin.setSurname("Admin");
-            admin.setDepartment("ICT");
+            admin.setDepartment(Department.ADMINISTRATION);
+            admin.setPhoneNumber("082 667 4431");
+            admin.setOfficeLocation("16G24");
+            admin.setPosition(AdminPosition.SYSTEM_ADMINISTRATOR);
+
 
             // LINK USER
             admin.setUser(user);

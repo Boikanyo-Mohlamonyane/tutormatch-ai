@@ -1,5 +1,6 @@
 package com.tut.ai_tutormatch.model;
 
+import com.tut.ai_tutormatch.enums.Specialization;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -18,7 +19,10 @@ public class Tutor {
 
     private String surname;
 
-    private String specialization;
+    private String bio;
+
+    @Enumerated(EnumType.STRING)
+    private Specialization specialization;
 
     private Integer yearsExperience;
 

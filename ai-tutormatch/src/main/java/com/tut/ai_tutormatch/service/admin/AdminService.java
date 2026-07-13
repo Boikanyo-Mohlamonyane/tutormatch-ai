@@ -42,35 +42,7 @@ public class AdminService {
     // =========================================
 
 
-    public String createSubject(CreateSubjectRequest request) {
 
-        Optional<Subject> existing =
-                subjectRepo.findBySubjectCode(
-                        request.getSubjectCode()
-                );
-
-        if (existing.isPresent()) {
-            return "Subject already exists";
-        }
-
-        Subject subject = new Subject();
-
-        subject.setSubjectCode(
-                request.getSubjectCode()
-        );
-
-        subject.setSubjectName(
-                request.getSubjectName()
-        );
-
-        subject.setDescription(
-                request.getDescription()
-        );
-
-        subjectRepo.save(subject);
-
-        return "Subject created successfully";
-    }
     public String createAdmin(CreateAdminRequest request) {
 
         // CHECK IF EMAIL EXISTS
@@ -84,25 +56,26 @@ public class AdminService {
         // CREATE LOGIN ACCOUNT
         User user = new User();
         user.setEmail(request.getEmail());
-
-        // ENCRYPT PASSWORD
-        user.setPassword(
-                passwordEncoder.encode(request.getPassword())
-        );
-
-        // SET ROLE
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.ADMIN);
 
-        // SAVE USER
         userRepo.save(user);
+
+        // GENERATE EMPLOYEE NUMBER
+        long nextNumber = adminRepo.count() + 1;
+        String employeeNumber = String.format("ADM%04d", nextNumber);
 
         // CREATE ADMIN PROFILE
         Admin admin = new Admin();
+
+
+        admin.setEmployeeNumber(employeeNumber);
         admin.setName(request.getName());
         admin.setSurname(request.getSurname());
-
-        // USE REQUEST VALUE
         admin.setDepartment(request.getDepartment());
+        admin.setPhoneNumber(request.getPhoneNumber());
+        admin.setOfficeLocation(request.getOfficeLocation());
+        admin.setPosition(request.getPosition());
 
         // LINK USER
         admin.setUser(user);
@@ -148,7 +121,8 @@ public class AdminService {
     // CREATE TUTOR
     // =========================================
     public String createTutor(CreateTutorRequest request) {
-
+        long count = tutorRepo.count() + 1;
+        String employeeNumber = String.format("TUT%04d", count);
         // CHECK IF EMAIL EXISTS
         Optional<User> existingUser =
                 userRepo.findByEmail(request.getEmail());
@@ -176,12 +150,14 @@ public class AdminService {
         Tutor tutor = new Tutor();
 
         tutor.setEmployeeNumber(
-                request.getEmployeeNumber()
+                employeeNumber
         );
 
         tutor.setName(request.getName());
 
         tutor.setSurname(request.getSurname());
+
+        tutor.setBio(request.getBio());
 
         tutor.setSpecialization(
                 request.getSpecialization()
@@ -245,7 +221,9 @@ public class AdminService {
 
         return tutorRepo.findAll();
     }
-
+public  List<Subject>getAllSubjects(){
+        return  subjectRepo.findAll();
+}
     // =========================================
 // GET ALL BOOKINGS
 // =========================================
@@ -296,9 +274,43 @@ public class AdminService {
         return "Subject deleted successfully";
     }
 
+
+
+
     // =========================================
-// UPDATE SUBJECT
+//  SUBJECTS
 // =========================================
+
+    public String createSubject(CreateSubjectRequest request) {
+
+        Optional<Subject> existing =
+                subjectRepo.findBySubjectCode(
+                        request.getSubjectCode()
+                );
+
+        if (existing.isPresent()) {
+            return "Subject already exists";
+        }
+
+        Subject subject = new Subject();
+
+        subject.setSubjectCode(
+                request.getSubjectCode()
+        );
+
+        subject.setSubjectName(
+                request.getSubjectName()
+        );
+
+        subject.setDescription(
+                request.getDescription()
+        );
+
+        subjectRepo.save(subject);
+
+        return "Subject created successfully";
+    }
+
     public String updateSubject(
             Long subjectId,
             CreateSubjectRequest request

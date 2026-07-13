@@ -4,24 +4,62 @@ import { adminApi } from "../../api/adminApi";
 import { PageHead, Spinner } from "../../components/ui/Common";
 import { useToast } from "../../context/ToastContext";
 
-const emptyForm = { name: "", email: "", password: "", subjectExpertise: "", bio: "" };
+const SPECIALIZATIONS = [
+  "ARTIFICIAL_INTELLIGENCE",
+  "MACHINE_LEARNING",
+  "DATA_SCIENCE",
+  "SOFTWARE_ENGINEERING",
+  "CYBER_SECURITY",
+  "WEB_DEVELOPMENT",
+  "MOBILE_DEVELOPMENT",
+  "DATABASE_SYSTEMS",
+  "COMPUTER_NETWORKS",
+  "CLOUD_COMPUTING",
+  "DEVOPS",
+  "COMPUTER_SCIENCE",
+];
+
+const emptyForm = {
+  name: "",
+  surname: "",
+  email: "",
+  password: "",
+  specialization: "",
+  bio: "",
+  yearsExperience: 0,
+};
 
 export default function CreateTutor() {
   const toast = useToast();
+
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]:
+        name === "yearsExperience"
+          ? value === ""
+            ? ""
+            : Number(value)
+          : value,
+    }));
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+
     try {
       await adminApi.createTutor(form);
-      toast.success(`${form.name || "Tutor"} has been onboarded.`);
+
+      toast.success(`${form.name} ${form.surname} has been onboarded.`);
       setForm(emptyForm);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.response?.data?.message || err.message);
     } finally {
       setSubmitting(false);
     }
@@ -31,27 +69,54 @@ export default function CreateTutor() {
     <div>
       <PageHead
         eyebrow="Admin · Operations"
-        title="Onboard a new tutor"
-        description="Create a tutor account directly. They can be assigned subjects afterward."
+        title="Onboard a New Tutor"
+        description="Create a tutor account directly."
       />
 
-      <div className="panel" style={{ maxWidth: 640 }}>
+      <div className="panel" style={{ maxWidth: 700 }}>
         <div className="panel-body">
           <form onSubmit={onSubmit}>
             <div className="grid-2">
               <div className="field">
-                <label>Full name</label>
-                <input className="input" name="name" value={form.name} onChange={onChange} required />
+                <label>First Name</label>
+                <input
+                  className="input"
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={onChange}
+                  required
+                />
               </div>
+
               <div className="field">
-                <label>Email address</label>
-                <input className="input" type="email" name="email" value={form.email} onChange={onChange} required />
+                <label>Surname</label>
+                <input
+                  className="input"
+                  type="text"
+                  name="surname"
+                  value={form.surname}
+                  onChange={onChange}
+                  required
+                />
               </div>
             </div>
 
             <div className="grid-2">
               <div className="field">
-                <label>Temporary password</label>
+                <label>Email Address</label>
+                <input
+                  className="input"
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={onChange}
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label>Temporary Password</label>
                 <input
                   className="input"
                   type="password"
@@ -61,31 +126,74 @@ export default function CreateTutor() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="grid-2">
               <div className="field">
-                <label>Subject expertise</label>
+                <label>Specialization</label>
+                <select
+                  className="input"
+                  name="specialization"
+                  value={form.specialization}
+                  onChange={onChange}
+                  required
+                >
+                  <option value="">Select Specialization</option>
+
+                  {SPECIALIZATIONS.map((specialization) => (
+                    <option
+                      key={specialization}
+                      value={specialization}
+                    >
+                      {specialization
+                        .replaceAll("_", " ")
+                        .toLowerCase()
+                        .replace(/\b\w/g, (c) => c.toUpperCase())}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Years of Experience</label>
                 <input
                   className="input"
-                  name="subjectExpertise"
-                  placeholder="e.g. Mathematics, Physics"
-                  value={form.subjectExpertise}
+                  type="number"
+                  min="0"
+                  name="yearsExperience"
+                  value={form.yearsExperience}
                   onChange={onChange}
+                  required
                 />
               </div>
             </div>
 
             <div className="field">
-              <label>Short bio</label>
+              <label>Bio</label>
               <textarea
                 className="input"
+                rows={4}
                 name="bio"
-                placeholder="A short intro shown to students"
+                placeholder="Brief description about the tutor..."
                 value={form.bio}
                 onChange={onChange}
+                required
               />
             </div>
 
-            <button className="btn btn-accent" disabled={submitting}>
-              {submitting ? <Spinner /> : <><UserPlus size={15} /> Create tutor account</>}
+            <button
+              type="submit"
+              className="btn btn-accent"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <Spinner />
+              ) : (
+                <>
+                  <UserPlus size={15} />
+                  Create Tutor Account
+                </>
+              )}
             </button>
           </form>
         </div>

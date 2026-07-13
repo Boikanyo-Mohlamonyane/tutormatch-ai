@@ -3,107 +3,213 @@ import { Link2 } from "lucide-react";
 import { adminApi } from "../../api/adminApi";
 import { studentApi } from "../../api/studentApi";
 import { PageHead, Spinner } from "../../components/ui/Common";
-import { pick } from "../../utils/format";
 import { useToast } from "../../context/ToastContext";
+
+const initialForm = {
+  tutorId: "",
+  subjectId: "",
+};
 
 export default function AssignSubject() {
   const toast = useToast();
-  const [tutors, setTutors] = useState([]);
-  const [subjects, setSubjects] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ tutorId: "", subjectId: "" });
+
+  const [tutors, setTutors] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+
+  const [form, setForm] = useState(initialForm);
+
+  // =====================================
+  // LOAD TUTORS & SUBJECTS
+  // =====================================
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const [t, s] = await Promise.all([adminApi.getAllTutors(), studentApi.getAllSubjects()]);
-        setTutors(t || []);
-        setSubjects(s || []);
-      } catch (err) {
-        toast.error(err.message);
-      } finally {
-        setLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadData();
   }, []);
 
-  const onSubmit = async (e) => {
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      const [tutorData, subjectData] = await Promise.all([
+        adminApi.getAllTutors(),
+        studentApi.getAllSubjects(),
+      ]);
+
+      console.log("Tutors:", tutorData);
+      console.log("Subjects:", subjectData);
+
+      setTutors(Array.isArray(tutorData) ? tutorData : []);
+      setSubjects(Array.isArray(subjectData) ? subjectData : []);
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Unable to load data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =====================================
+  // CHANGE
+  // =====================================
+
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  // =====================================
+  // SUBMIT
+  // =====================================
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.tutorId || !form.subjectId) {
-      toast.error("Choose both a tutor and a subject.");
+
+    if (!form.tutorId) {
+      toast.error("Please select a tutor.");
       return;
     }
-    setSubmitting(true);
+
+    if (!form.subjectId) {
+      toast.error("Please select a subject.");
+      return;
+    }
+
     try {
-      await adminApi.assignSubjectToTutor({
+      setSubmitting(true);
+
+      const payload = {
         tutorId: Number(form.tutorId),
         subjectId: Number(form.subjectId),
-      });
-      toast.success("Subject assigned to tutor.");
-      setForm({ tutorId: "", subjectId: "" });
-    } catch (err) {
-      toast.error(err.message);
+      };
+
+      console.log(payload);
+
+      const response = await adminApi.assignSubjectToTutor(payload);
+
+      toast.success(
+        response?.message || "Subject assigned successfully."
+      );
+
+      setForm(initialForm);
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Failed to assign subject.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div style={{ padding: 40, textAlign: "center" }}>
+        <Spinner dark />
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHead
-        eyebrow="Admin · Catalog"
-        title="Assign subject to tutor"
-        description="Grant a tutor the ability to teach and be booked for a given subject."
+        eyebrow="Admin"
+        title="Assign Subject to Tutor"
+        description="Assign a subject to a tutor."
       />
 
-      <div className="panel" style={{ maxWidth: 560 }}>
+      <div
+        className="panel"
+        style={{
+          maxWidth: 650,
+          margin: "0 auto",
+        }}
+      >
         <div className="panel-body">
-          {loading ? (
-            <Spinner dark />
-          ) : (
-            <form onSubmit={onSubmit}>
-              <div className="field">
-                <label>Tutor</label>
-                <select
-                  className="input"
-                  value={form.tutorId}
-                  onChange={(e) => setForm({ ...form, tutorId: e.target.value })}
-                  required
-                >
-                  <option value="">Select a tutor</option>
-                  {tutors.map((t, i) => (
-                    <option key={pick(t, ["id", "tutorId"], i)} value={pick(t, ["id", "tutorId"])}>
-                      {pick(t, ["name", "fullName"], `Tutor #${pick(t, ["id", "tutorId"], i)}`)}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              <div className="field">
-                <label>Subject</label>
-                <select
-                  className="input"
-                  value={form.subjectId}
-                  onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
-                  required
-                >
-                  <option value="">Select a subject</option>
-                  {subjects.map((s, i) => (
-                    <option key={pick(s, ["id", "subjectId"], i)} value={pick(s, ["id", "subjectId"])}>
-                      {pick(s, ["name", "subjectName"], `Subject #${pick(s, ["id", "subjectId"], i)}`)}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <form onSubmit={handleSubmit}>
 
-              <button className="btn btn-accent" disabled={submitting} style={{ width: "100%" }}>
-                {submitting ? <Spinner /> : <><Link2 size={15} /> Assign subject</>}
-              </button>
-            </form>
-          )}
+            {/* Tutor */}
+
+            <div className="field">
+
+              <label>Select Tutor</label>
+
+              <select
+                className="input"
+                name="tutorId"
+                value={form.tutorId}
+                onChange={handleChange}
+                required
+              >
+                <option value="">-- Select Tutor --</option>
+
+                {tutors.map((tutor) => (
+                  <option
+                    key={tutor.tutorId}
+                    value={tutor.tutorId}
+                  >
+                    {tutor.name} {tutor.surname}
+                    {" - "}
+                    {tutor.employeeNumber}
+                  </option>
+                ))}
+
+              </select>
+
+            </div>
+
+            {/* Subject */}
+
+            <div className="field">
+
+              <label>Select Subject</label>
+
+              <select
+                className="input"
+                name="subjectId"
+                value={form.subjectId}
+                onChange={handleChange}
+                required
+              >
+                <option value="">-- Select Subject --</option>
+
+                {subjects.map((subject) => (
+                  <option
+                    key={subject.subjectId}
+                    value={subject.subjectId}
+                  >
+                    {subject.subjectCode} - {subject.subjectName}
+                  </option>
+                ))}
+
+              </select>
+
+            </div>
+
+            <button
+              className="btn btn-accent"
+              type="submit"
+              disabled={submitting}
+              style={{
+                width: "100%",
+                marginTop: 20,
+              }}
+            >
+              {submitting ? (
+                <Spinner />
+              ) : (
+                <>
+                  <Link2 size={18} />
+                  Assign Subject
+                </>
+              )}
+            </button>
+
+          </form>
+
         </div>
       </div>
     </div>

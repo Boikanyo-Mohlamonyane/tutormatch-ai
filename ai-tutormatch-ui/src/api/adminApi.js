@@ -1,27 +1,99 @@
-import axiosClient from "./axiosClient";
+import axiosClient from './axiosClient';
 
-// Matches AdminController (@RequestMapping "/api/admin")
+// ==========================================
+// ADMIN API
+// Base URL: /api/admin
+// ==========================================
+
 export const adminApi = {
-  getDashboard: () => axiosClient.get("/admin/dashboard").then((r) => r.data),
+  // ==========================================
+  // DASHBOARD
+  // ==========================================
+  getDashboard: () =>
+    axiosClient.get ('/admin/dashboard').then (response => response.data),
 
-  createSubject: (payload) => axiosClient.post("/admin/create/subject", payload).then((r) => r.data),
+  // ==========================================
+  // SUBJECTS
+  // ==========================================
+
+  // GET ALL SUBJECTS
+  getAllSubjects: () =>
+    axiosClient.get ('/admin/subjects').then (response => response.data),
+
+  // CREATE SUBJECT
+  createSubject: payload =>
+    axiosClient
+      .post ('/admin/create/subject', payload)
+      .then (response => response.data),
+
+  // UPDATE SUBJECT
   updateSubject: (subjectId, payload) =>
-    axiosClient.put(`/admin/update-subject/${subjectId}`, payload).then((r) => r.data),
-  deleteSubject: (subjectId) => axiosClient.delete(`/admin/delete-subject/${subjectId}`).then((r) => r.data),
+    axiosClient
+      .put (`/admin/update-subject/${subjectId}`, payload)
+      .then (response => response.data),
 
-  assignSubjectToTutor: (payload) =>
-    axiosClient.post("/admin/assign-tutor-subject", payload).then((r) => r.data),
+  // DELETE SUBJECT
+  deleteSubject: subjectId =>
+    axiosClient
+      .delete (`/admin/delete-subject/${subjectId}`)
+      .then (response => response.data),
 
-  createAdmin: (payload) => axiosClient.post("/admin/create-admin", payload).then((r) => r.data),
-  createTutor: (payload) => axiosClient.post("/admin/create-tutor", payload).then((r) => r.data),
+  // ==========================================
+  // ASSIGN SUBJECT TO TUTOR
+  // ==========================================
+  assignSubjectToTutor: payload =>
+    axiosClient
+      .post ('/admin/assign-tutor-subject', payload)
+      .then (response => response.data),
 
-  getAllStudents: () => axiosClient.get("/admin/students").then((r) => r.data),
-  getAllTutors: () => axiosClient.get("/admin/tutors").then((r) => r.data),
-  getAllBookings: () => axiosClient.get("/admin/bookings").then((r) => r.data),
+  // ==========================================
+  // ADMINS
+  // ==========================================
+  createAdmin: payload =>
+    axiosClient
+      .post ('/admin/create-admin', payload)
+      .then (response => response.data),
 
-  deleteStudent: (studentId) => axiosClient.delete(`/admin/delete-student/${studentId}`).then((r) => r.data),
-  deleteTutor: (tutorId) => axiosClient.delete(`/admin/delete-tutor/${tutorId}`).then((r) => r.data),
+  // ==========================================
+  // TUTORS
+  // ==========================================
+  createTutor: payload =>
+    axiosClient
+      .post ('/admin/create-tutor', payload)
+      .then (response => response.data),
 
-  approveBooking: (bookingId) => axiosClient.put(`/admin/approve-booking/${bookingId}`).then((r) => r.data),
-  rejectBooking: (bookingId) => axiosClient.put(`/admin/reject-booking/${bookingId}`).then((r) => r.data),
+  getAllTutors: () =>
+    axiosClient.get ('/admin/tutors').then (response => response.data),
+
+  deleteTutor: tutorId =>
+    axiosClient
+      .delete (`/admin/delete-tutor/${tutorId}`)
+      .then (response => response.data),
+
+  // ==========================================
+  // STUDENTS
+  // ==========================================
+  getAllStudents: () =>
+    axiosClient.get ('/admin/students').then (response => response.data),
+
+  deleteStudent: studentId =>
+    axiosClient
+      .delete (`/admin/delete-student/${studentId}`)
+      .then (response => response.data),
+
+  // ==========================================
+  // BOOKINGS
+  // ==========================================
+  getAllBookings: () =>
+    axiosClient.get ('/admin/bookings').then (response => response.data),
+
+  approveBooking: bookingId =>
+    axiosClient
+      .put (`/admin/approve-booking/${bookingId}`)
+      .then (response => response.data),
+
+  rejectBooking: bookingId =>
+    axiosClient
+      .put (`/admin/reject-booking/${bookingId}`)
+      .then (response => response.data),
 };

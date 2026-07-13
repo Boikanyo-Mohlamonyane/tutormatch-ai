@@ -1,5 +1,6 @@
 package com.tut.ai_tutormatch.service;
 
+import com.tut.ai_tutormatch.enums.Specialization;
 import com.tut.ai_tutormatch.model.Student;
 import com.tut.ai_tutormatch.model.Tutor;
 import com.tut.ai_tutormatch.repository.TutorRepository;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @Service
 public class MatchingService {
+
     @Autowired
     private TutorRepository tutorRepo;
 
@@ -18,7 +20,6 @@ public class MatchingService {
         List<Tutor> tutors = tutorRepo.findAll();
 
         Tutor bestTutor = null;
-
         double highestScore = 0;
 
         for (Tutor tutor : tutors) {
@@ -26,28 +27,26 @@ public class MatchingService {
             double score = 0;
 
             // EXPERIENCE SCORE
-            if(tutor.getYearsExperience() >= 5) {
+            if (tutor.getYearsExperience() >= 5) {
                 score += 20;
             }
 
             // SPECIALIZATION SCORE
-            if(tutor.getSpecialization()
-                    .equalsIgnoreCase("Programming")) {
+            if (tutor.getSpecialization() == Specialization.SOFTWARE_ENGINEERING
+                    || tutor.getSpecialization() == Specialization.COMPUTER_SCIENCE
+                    || tutor.getSpecialization() == Specialization.WEB_DEVELOPMENT
+                    || tutor.getSpecialization() == Specialization.MOBILE_DEVELOPMENT) {
 
                 score += 50;
             }
 
-            // HIGH RISK BONUS
-            if(student.getRiskLevel()
-                    .equalsIgnoreCase("HIGH")) {
-
+            // HIGH-RISK BONUS
+            if ("HIGH".equalsIgnoreCase(student.getRiskLevel())) {
                 score += 15;
             }
 
-            if(score > highestScore) {
-
+            if (score > highestScore) {
                 highestScore = score;
-
                 bestTutor = tutor;
             }
         }

@@ -124,7 +124,10 @@ public class AdminController {
 
         return adminService.getAllTutors();
     }
-
+    @GetMapping("/subjects")
+   public List<Subject> getAllSubjects(){
+        return  adminService.getAllSubjects();
+   }
     // =========================================
     // GET ALL BOOKINGS
     // =========================================

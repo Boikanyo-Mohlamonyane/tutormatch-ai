@@ -1,211 +1,350 @@
-import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
-import { adminApi } from "../../api/adminApi";
-import { studentApi } from "../../api/studentApi";
-import { PageHead, Spinner, Modal, ConfirmModal } from "../../components/ui/Common";
-import { pick } from "../../utils/format";
-import { useToast } from "../../context/ToastContext";
+import {useEffect, useState} from 'react';
+import {Plus, Pencil, Trash2, BookOpen} from 'lucide-react';
+import {adminApi} from '../../api/adminApi';
+import {studentApi} from '../../api/studentApi';
+import {
+  PageHead,
+  Spinner,
+  Modal,
+  ConfirmModal,
+} from '../../components/ui/Common';
+import {pick} from '../../utils/format';
+import {useToast} from '../../context/ToastContext';
 
-const emptyForm = { name: "", description: "" };
+const emptyForm = {
+  subjectCode: '',
+  subjectName: '',
+  description: '',
+};
 
-export default function Subjects() {
-  const toast = useToast();
-  const [loading, setLoading] = useState(true);
-  const [subjects, setSubjects] = useState([]);
-  const [editing, setEditing] = useState(null); // subject object or "new"
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
-  const [toDelete, setToDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+export default function Subjects () {
+  const toast = useToast ();
 
+  const [loading, setLoading] = useState (true);
+  const [subjects, setSubjects] = useState ([]);
+
+  const [editing, setEditing] = useState (null);
+  const [form, setForm] = useState (emptyForm);
+  const [saving, setSaving] = useState (false);
+
+  const [toDelete, setToDelete] = useState (null);
+  const [deleting, setDeleting] = useState (false);
+
+  // =====================================================
+  // LOAD SUBJECTS
+  // =====================================================
   const load = async () => {
-    setLoading(true);
     try {
-      // Subjects are exposed under the student read endpoint in the backend.
-      const data = await studentApi.getAllSubjects();
-      setSubjects(data || []);
+      setLoading (true);
+
+      const response = await studentApi.getAllSubjects ();
+
+      setSubjects (Array.isArray (response) ? response : []);
     } catch (err) {
-      toast.error(err.message);
+      toast.error (err.message || 'Failed to load subjects');
     } finally {
-      setLoading(false);
+      setLoading (false);
     }
   };
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect (() => {
+    load ();
   }, []);
 
+  // =====================================================
+  // CREATE
+  // =====================================================
   const openCreate = () => {
-    setForm(emptyForm);
-    setEditing("new");
+    setForm (emptyForm);
+    setEditing ('new');
   };
 
-  const openEdit = (subject) => {
-    setForm({
-      name: pick(subject, ["name", "subjectName"], ""),
-      description: pick(subject, ["description"], ""),
+  // =====================================================
+  // EDIT
+  // =====================================================
+  const openEdit = subject => {
+    setEditing (subject);
+
+    setForm ({
+      subjectCode: subject.subjectCode || '',
+      subjectName: subject.subjectName || '',
+      description: subject.description || '',
     });
-    setEditing(subject);
   };
 
-  const onSave = async (e) => {
-    e.preventDefault();
-    setSaving(true);
+  // =====================================================
+  // CLOSE MODAL
+  // =====================================================
+  const closeModal = () => {
+    setEditing (null);
+    setForm (emptyForm);
+  };
+
+  // =====================================================
+  // SAVE
+  // =====================================================
+  const onSave = async e => {
+    e.preventDefault ();
+
+    if (saving) return;
+
     try {
-      if (editing === "new") {
-        await adminApi.createSubject(form);
-        toast.success("Subject created.");
-      } else {
-        await adminApi.updateSubject(pick(editing, ["id", "subjectId"]), form);
-        toast.success("Subject updated.");
+      setSaving (true);
+
+      const payload = {
+        subjectCode: form.subjectCode.trim (),
+        subjectName: form.subjectName.trim (),
+        description: form.description.trim (),
+      };
+
+      if (!payload.subjectCode || !payload.subjectName) {
+        toast.error ('Subject code and subject name are required.');
+        return;
       }
-      setEditing(null);
-      load();
+
+      if (editing === 'new') {
+        await adminApi.createSubject (payload);
+
+        toast.success ('Subject created successfully.');
+      } else {
+        await adminApi.updateSubject (editing.id, payload);
+
+        toast.success ('Subject updated successfully.');
+      }
+
+      closeModal ();
+
+      await load ();
     } catch (err) {
-      toast.error(err.message);
+      toast.error (err.message || 'Unable to save subject.');
     } finally {
-      setSaving(false);
+      setSaving (false);
     }
   };
 
+  // =====================================================
+  // DELETE
+  // =====================================================
   const confirmDelete = async () => {
-    setDeleting(true);
+    if (!toDelete) return;
+
     try {
-      await adminApi.deleteSubject(pick(toDelete, ["id", "subjectId"]));
-      toast.success("Subject deleted.");
-      setToDelete(null);
-      load();
+      setDeleting (true);
+
+      await adminApi.deleteSubject (toDelete.id);
+
+      toast.success ('Subject deleted successfully.');
+
+      setToDelete (null);
+
+      await load ();
     } catch (err) {
-      toast.error(err.message);
+      toast.error (err.message || 'Unable to delete subject.');
     } finally {
-      setDeleting(false);
+      setDeleting (false);
     }
   };
 
   return (
     <div>
       <PageHead
-        eyebrow="Admin · Catalog"
+        eyebrow="Admin • Catalog"
         title="Subjects"
-        description="The catalog of subjects students can browse and book tutors for."
+        description="Manage available university subjects."
         action={
           <button className="btn btn-accent" onClick={openCreate}>
-            <Plus size={15} /> New subject
+            <Plus size={15} />
+            New Subject
           </button>
         }
       />
 
       <div className="panel">
         <div className="panel-body no-pad">
-          {loading ? (
-            <div className="table-empty">
-              <Spinner dark />
-            </div>
-          ) : subjects.length === 0 ? (
-            <div className="table-empty">
-              <strong>No subjects yet</strong>
-              Create the first subject so students can start booking tutors.
-            </div>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Subject</th>
-                  <th>Description</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {subjects.map((s, i) => (
-                  <tr key={pick(s, ["id", "subjectId"], i)}>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div
-                          style={{
-                            width: 30,
-                            height: 30,
-                            borderRadius: 8,
-                            background: "var(--accent-tint)",
-                            color: "var(--accent-ink)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <BookOpen size={15} />
-                        </div>
-                        <strong style={{ fontWeight: 600 }}>{pick(s, ["name", "subjectName"], "Untitled")}</strong>
-                      </div>
-                    </td>
-                    <td className="cell-muted">{pick(s, ["description"], "—")}</td>
-                    <td style={{ textAlign: "right", display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(s)}>
-                        <Pencil size={13} /> Edit
-                      </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => setToDelete(s)}>
-                        <Trash2 size={13} /> Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+
+          {loading
+            ? <div className="table-empty">
+                <Spinner dark />
+              </div>
+            : subjects.length === 0
+                ? <div className="table-empty">
+                    <strong>No subjects found.</strong>
+                    <br />
+                    Click <b>New Subject</b> to create one.
+                  </div>
+                : <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Code</th>
+                        <th>Subject</th>
+                        <th>Description</th>
+                        <th width="180" />
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {subjects.map (subject => (
+                        <tr key={subject.id}>
+                          <td>
+                            <strong>{subject.subjectCode}</strong>
+                          </td>
+
+                          <td>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 34,
+                                  height: 34,
+                                  borderRadius: 8,
+                                  background: 'var(--accent-tint)',
+                                  color: 'var(--accent-ink)',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <BookOpen size={16} />
+                              </div>
+
+                              <strong>{subject.subjectName}</strong>
+                            </div>
+                          </td>
+
+                          <td>{subject.description || '-'}</td>
+
+                          <td>
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: 8,
+                              }}
+                            >
+                              <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => openEdit (subject)}
+                              >
+                                <Pencil size={14} />
+                                Edit
+                              </button>
+
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => setToDelete (subject)}
+                              >
+                                <Trash2 size={14} />
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>}
         </div>
       </div>
 
-      {editing && (
+      {/* CREATE / EDIT MODAL */}
+      {editing &&
         <Modal
-          title={editing === "new" ? "New subject" : "Edit subject"}
-          onClose={() => setEditing(null)}
-          footer={
-            <>
-              <button className="btn btn-ghost" onClick={() => setEditing(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-accent" onClick={onSave} disabled={saving}>
-                {saving ? <Spinner /> : "Save subject"}
-              </button>
-            </>
-          }
+          title={editing === 'new' ? 'Create Subject' : 'Edit Subject'}
+          onClose={closeModal}
         >
           <form onSubmit={onSave}>
+
             <div className="field">
-              <label>Subject name</label>
+              <label>Subject Code</label>
+
               <input
                 className="input"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g. Algebra II"
+                placeholder="e.g. CSC101"
+                value={form.subjectCode}
+                onChange={e =>
+                  setForm ({
+                    ...form,
+                    subjectCode: e.target.value,
+                  })}
                 required
               />
             </div>
+
             <div className="field">
-              <label>Description</label>
-              <textarea
+              <label>Subject Name</label>
+
+              <input
                 className="input"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="What this subject covers"
+                placeholder="Computer Science"
+                value={form.subjectName}
+                onChange={e =>
+                  setForm ({
+                    ...form,
+                    subjectName: e.target.value,
+                  })}
+                required
               />
             </div>
-          </form>
-        </Modal>
-      )}
 
-      {toDelete && (
+            <div className="field">
+              <label>Description</label>
+
+              <textarea
+                className="input"
+                rows={4}
+                value={form.description}
+                placeholder="Enter description..."
+                onChange={e =>
+                  setForm ({
+                    ...form,
+                    description: e.target.value,
+                  })}
+              />
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 10,
+                marginTop: 20,
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={closeModal}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                className="btn btn-accent"
+                disabled={saving}
+              >
+                {saving ? <Spinner /> : 'Save Subject'}
+              </button>
+            </div>
+
+          </form>
+        </Modal>}
+
+      {/* DELETE MODAL */}
+      {toDelete &&
         <ConfirmModal
-          title="Delete subject"
-          message={`"${pick(toDelete, ["name", "subjectName"], "This subject")}" will be removed from the catalog.`}
-          confirmLabel="Delete subject"
+          title="Delete Subject"
+          message={`Are you sure you want to delete "${toDelete.subjectName}"?`}
+          confirmLabel="Delete Subject"
           danger
           loading={deleting}
           onConfirm={confirmDelete}
-          onClose={() => setToDelete(null)}
-        />
-      )}
+          onClose={() => setToDelete (null)}
+        />}
     </div>
   );
 }

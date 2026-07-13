@@ -1,5 +1,7 @@
 package com.tut.ai_tutormatch.dto;
 
+import com.tut.ai_tutormatch.enums.AdminPosition;
+import com.tut.ai_tutormatch.enums.Department;
 import lombok.Data;
 
 @Data
@@ -13,5 +15,12 @@ public class CreateAdminRequest {
 
     private String password;
 
-    private String department;
+    private Department department;
+
+    private String phoneNumber;
+
+    private String officeLocation;
+
+    private AdminPosition position;
+
 }
