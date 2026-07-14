@@ -1,7 +1,6 @@
 import axios from "axios";
 
-// In dev, Vite proxies /api to the Spring Boot backend (see vite.config.js).
-// In production, point VITE_API_BASE_URL at the deployed backend origin.
+// Base URL points to frontend origin with /api
 const baseURL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 const axiosClient = axios.create({
@@ -11,7 +10,6 @@ const axiosClient = axios.create({
   },
 });
 
-// Attach the JWT (if present) to every outgoing request.
 axiosClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("tm_token");
   if (token) {
@@ -20,7 +18,6 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Normalize errors and handle expired/invalid sessions globally.
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
