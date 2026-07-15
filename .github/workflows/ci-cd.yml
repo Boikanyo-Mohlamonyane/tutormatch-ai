@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend
+        working-directory: ai-tutormatch
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: ai-tutormatch-ui
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -45,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Dependencies
         run: npm ci
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ml
+        working-directory: AI-TutorMatch-ML
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -89,13 +89,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Backend Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest ./backend
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest ./ai-tutormatch
 
       - name: Build Frontend Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-frontend:latest ./frontend
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-frontend:latest ./ai-tutormatch-ui
 
       - name: Build ML Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-ml:latest ./ml
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-ml:latest ./AI-TutorMatch-ML
 
       - name: Push Backend Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest
