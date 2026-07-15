@@ -107,13 +107,22 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Backend Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest -f ./ai-tutormatch/Dockerfile ./ai-tutormatch
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest -f ai-tutormatch/Dockerfile ai-tutormatch
+
+      - name: Test Backend Container
+        run: docker run --rm -d -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest && sleep 10 && docker ps -a
 
       - name: Build Frontend Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-frontend:latest -f ./ai-tutormatch-ui/Dockerfile ./ai-tutormatch-ui
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-frontend:latest -f ai-tutormatch-ui/Dockerfile ai-tutormatch-ui
+
+      - name: Test Frontend Container
+        run: docker run --rm -d -p 3000:80 ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-frontend:latest && sleep 10 && docker ps -a
 
       - name: Build ML Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-ml:latest -f ./AI-TutorMatch-ML/Dockerfile ./AI-TutorMatch-ML
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-ml:latest -f AI-TutorMatch-ML/Dockerfile AI-TutorMatch-ML
+
+      - name: Test ML Container
+        run: docker run --rm -d -p 5000:5000 ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-ml:latest && sleep 10 && docker ps -a
 
       - name: Push Backend Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest
