@@ -73,14 +73,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Tests (if any)
-        run: |
-          echo "No ML tests defined yet"
+        run: echo "No ML tests defined yet"
 
   docker:
-    needs:
-      - backend-build
-      - frontend-build
-      - ml-build
+    needs: [backend-build, frontend-build, ml-build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
