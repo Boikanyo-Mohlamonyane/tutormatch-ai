@@ -1,43 +1,30 @@
-version: "3.9"
-
 services:
-
   postgres:
     image: postgres:16-alpine
-
     restart: unless-stopped
-
     environment:
       POSTGRES_DB: ai_tutormatch_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-    expose:
-      - "5432"
+    ports:
+      - "5432:5432"
 
   ml:
-    image: YOUR_DOCKERHUB_USERNAME/ai-tutormatch-ml:latest
-
+    image: boikanyomohlax/ai-tutormatch-ml:latest
     restart: unless-stopped
-
-    expose:
-      - "5000"
+    ports:
+      - "5000:5000"
 
   backend:
-    image: YOUR_DOCKERHUB_USERNAME/ai-tutormatch-backend:latest
-
+    image: boikanyomohlax/ai-tutormatch-backend:latest
     restart: unless-stopped
-
-    expose:
-      - "8080"
-
+    ports:
+      - "8080:8080"
     depends_on:
       - postgres
       - ml
-
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ai_tutormatch_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -45,13 +32,10 @@ services:
       ML_SERVICE_URL: http://ml:5000
 
   frontend:
-    image: YOUR_DOCKERHUB_USERNAME/ai-tutormatch-ui:latest
-
+    image: boikanyomohlax/ai-tutormatch-frontend:latest
     restart: unless-stopped
-
     ports:
       - "80:80"
-
     depends_on:
       - backend
 
