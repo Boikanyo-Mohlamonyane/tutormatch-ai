@@ -11,6 +11,20 @@ on:
 jobs:
   backend-build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ai_tutormatch_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: root
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     defaults:
       run:
         working-directory: ai-tutormatch
@@ -28,6 +42,10 @@ jobs:
         run: chmod +x mvnw
 
       - name: Run Tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/ai_tutormatch_db
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: root
         run: ./mvnw test
 
       - name: Build Spring Boot App
