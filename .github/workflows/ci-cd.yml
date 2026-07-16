@@ -96,7 +96,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Tests (if any)
+      - name: Run Tests 
         run: echo "No ML tests defined yet"
 
   docker:
