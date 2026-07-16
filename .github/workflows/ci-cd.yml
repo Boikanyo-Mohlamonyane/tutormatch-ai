@@ -119,13 +119,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Frontend Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-frontend:latest -f ai-tutormatch-ui/Dockerfile ai-tutormatch-ui
+        run: docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-frontend:latest -f ai-tutormatch-ui/Dockerfile ai-tutormatch-ui
 
       - name: Build ML Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-ml:latest -f AI-TutorMatch-ML/Dockerfile AI-TutorMatch-ML
+        run: docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-ml:latest -f AI-TutorMatch-ML/Dockerfile AI-TutorMatch-ML
 
       - name: Build Backend Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest -f ai-tutormatch/Dockerfile ai-tutormatch
+        run: docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest -f ai-tutormatch/Dockerfile ai-tutormatch
 
       - name: Push Backend Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-backend:latest
@@ -135,6 +135,25 @@ jobs:
 
       - name: Push ML Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/ai-tutormatch-ml:latest
+
+      - name: Clean up Docker (Runner)
+        run: docker system prune -af
+
+      - name: Delete Old Tags from Docker Hub
+        run: |
+          repos=("ai-tutormatch-backend" "ai-tutormatch-frontend" "ai-tutormatch-ml")
+          for repo in "${repos[@]}"; do
+            echo "Cleaning old tags for $repo..."
+            # Get all tags except 'latest'
+            tags=$(curl -s -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" \
+              "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/$repo/tags/?page_size=100" \
+              | jq -r '.results[].name' | grep -v latest)
+            for tag in $tags; do
+              echo "Deleting $repo:$tag"
+              curl -s -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" \
+                -X DELETE "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/$repo/tags/$tag/"
+            done
+          done
 
   deploy:
     needs: docker
