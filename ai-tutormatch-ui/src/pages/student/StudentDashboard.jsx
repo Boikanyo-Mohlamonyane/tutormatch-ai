@@ -136,6 +136,7 @@ export default function StudentDashboard() {
             avgScore !== null
               ? `${Math.round(avgScore)}%`
               : "No data"
+              3
           }
           ring={avgScore ?? 0}
         />
