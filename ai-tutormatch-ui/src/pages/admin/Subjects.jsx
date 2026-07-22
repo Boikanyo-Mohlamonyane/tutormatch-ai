@@ -1,14 +1,12 @@
 import {useEffect, useState} from 'react';
 import {Plus, Pencil, Trash2, BookOpen} from 'lucide-react';
 import {adminApi} from '../../api/adminApi';
-import {studentApi} from '../../api/studentApi';
 import {
   PageHead,
   Spinner,
   Modal,
   ConfirmModal,
 } from '../../components/ui/Common';
-import {pick} from '../../utils/format';
 import {useToast} from '../../context/ToastContext';
 
 const emptyForm = {
@@ -37,9 +35,18 @@ export default function Subjects () {
     try {
       setLoading (true);
 
-      const response = await studentApi.getAllSubjects ();
+      const response = await adminApi.getAllSubjects ();
 
-      setSubjects (Array.isArray (response) ? response : []);
+      const data = Array.isArray (response)
+        ? response.map (subject => ({
+            id: subject.subjectId,
+            subjectCode: subject.subjectCode,
+            subjectName: subject.subjectName,
+            description: subject.description,
+          }))
+        : [];
+
+      setSubjects (data);
     } catch (err) {
       toast.error (err.message || 'Failed to load subjects');
     } finally {
@@ -66,8 +73,8 @@ export default function Subjects () {
     setEditing (subject);
 
     setForm ({
-      subjectCode: subject.subjectCode || '',
-      subjectName: subject.subjectName || '',
+      subjectCode: subject.subjectCode,
+      subjectName: subject.subjectName,
       description: subject.description || '',
     });
   };
@@ -98,22 +105,19 @@ export default function Subjects () {
       };
 
       if (!payload.subjectCode || !payload.subjectName) {
-        toast.error ('Subject code and subject name are required.');
+        toast.error ('Subject Code and Subject Name are required.');
         return;
       }
 
       if (editing === 'new') {
         await adminApi.createSubject (payload);
-
         toast.success ('Subject created successfully.');
       } else {
         await adminApi.updateSubject (editing.id, payload);
-
         toast.success ('Subject updated successfully.');
       }
 
       closeModal ();
-
       await load ();
     } catch (err) {
       toast.error (err.message || 'Unable to save subject.');
@@ -161,7 +165,6 @@ export default function Subjects () {
 
       <div className="panel">
         <div className="panel-body no-pad">
-
           {loading
             ? <div className="table-empty">
                 <Spinner dark />
@@ -257,7 +260,6 @@ export default function Subjects () {
           onClose={closeModal}
         >
           <form onSubmit={onSave}>
-
             <div className="field">
               <label>Subject Code</label>
 
@@ -296,8 +298,8 @@ export default function Subjects () {
               <textarea
                 className="input"
                 rows={4}
-                value={form.description}
                 placeholder="Enter description..."
+                value={form.description}
                 onChange={e =>
                   setForm ({
                     ...form,
@@ -330,7 +332,6 @@ export default function Subjects () {
                 {saving ? <Spinner /> : 'Save Subject'}
               </button>
             </div>
-
           </form>
         </Modal>}
 

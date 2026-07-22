@@ -110,7 +110,7 @@ public class AdminController {
     // =========================================
 
     @GetMapping("/students")
-    public List<Student> getAllStudents() {
+    public List<StudentDto>  getAllStudents() {
 
         return adminService.getAllStudents();
     }

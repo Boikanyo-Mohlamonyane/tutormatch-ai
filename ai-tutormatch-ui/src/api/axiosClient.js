@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Base URL points to frontend origin with /api
-const baseURL = import.meta.env.VITE_API_BASE_URL || "/api";
+const baseURL = import.meta.env.VITE_API_BASE_URL ;
 
 const axiosClient = axios.create({
   baseURL,

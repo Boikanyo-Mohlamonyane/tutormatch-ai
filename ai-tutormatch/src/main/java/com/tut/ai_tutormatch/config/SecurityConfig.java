@@ -20,15 +20,15 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http.cors(cors -> {
-                }) // ✅ enable CORS
+                }) // enable CORS
                                 .csrf(csrf -> csrf.disable()) // disable CSRF for APIs
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
-                                                // ✅ Allow preflight OPTIONS requests
+                                                //  Allow preflight OPTIONS requests
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                                                // ✅ Allow auth endpoints without JWT
+                                                // Allow auth endpoints without JWT
                                                 .requestMatchers("/api/auth/**",
                                                                 "/swagger-ui/**",
                                                                 "/v3/api-docs/**",

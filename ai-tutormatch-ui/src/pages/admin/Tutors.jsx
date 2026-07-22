@@ -2,12 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Trash2, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { adminApi } from "../../api/adminApi";
-import { PageHead, Spinner, ConfirmModal } from "../../components/ui/Common";
-import { pick, initialsOf } from "../../utils/format";
+import {
+  PageHead,
+  Spinner,
+  ConfirmModal,
+} from "../../components/ui/Common";
+import { initialsOf } from "../../utils/format";
 import { useToast } from "../../context/ToastContext";
 
 export default function Tutors() {
   const toast = useToast();
+
   const [loading, setLoading] = useState(true);
   const [tutors, setTutors] = useState([]);
   const [query, setQuery] = useState("");
@@ -16,11 +21,12 @@ export default function Tutors() {
 
   const load = async () => {
     setLoading(true);
+
     try {
       const data = await adminApi.getAllTutors();
       setTutors(data || []);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.message || "Failed to load tutors.");
     } finally {
       setLoading(false);
     }
@@ -28,30 +34,40 @@ export default function Tutors() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+
     if (!q) return tutors;
-    return tutors.filter((t) =>
-      [pick(t, ["name", "fullName"]), pick(t, ["email"]), pick(t, ["subjectExpertise", "expertise"])]
-        .filter(Boolean)
+
+    return tutors.filter((tutor) =>
+      [
+        tutor.employeeNumber,
+        `${tutor.name ?? ""} ${tutor.surname ?? ""}`,
+        tutor.user?.email,
+        tutor.specialization,
+      ]
         .join(" ")
         .toLowerCase()
         .includes(q)
     );
-  }, [tutors, query]);
+  }, [query, tutors]);
 
   const confirmDelete = async () => {
+    if (!toDelete) return;
+
     setDeleting(true);
+
     try {
-      await adminApi.deleteTutor(pick(toDelete, ["id", "tutorId"]));
-      toast.success("Tutor removed.");
+      await adminApi.deleteTutor(toDelete.tutorId);
+
+      toast.success("Tutor removed successfully.");
       setToDelete(null);
       load();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.message || "Unable to remove tutor.");
     } finally {
       setDeleting(false);
     }
@@ -60,17 +76,23 @@ export default function Tutors() {
   return (
     <div>
       <PageHead
-        eyebrow="Admin · Directory"
+        eyebrow="Admin · Tutors"
         title="Tutors"
-        description="Everyone approved to teach on the platform."
+        description="Manage all tutors registered on the platform."
         action={
           <div style={{ display: "flex", gap: 10 }}>
             <div className="search-box">
               <Search size={15} />
-              <input placeholder="Search by name, email, subject" value={query} onChange={(e) => setQuery(e.target.value)} />
+              <input
+                placeholder="Search by employee number, name, email or specialization"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
             </div>
+
             <Link to="/admin/create-tutor" className="btn btn-accent">
-              <UserPlus size={15} /> New tutor
+              <UserPlus size={15} />
+              New Tutor
             </Link>
           </div>
         }
@@ -84,53 +106,90 @@ export default function Tutors() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="table-empty">
-              <strong>No tutors found</strong>
-              Try a different search, or onboard a new tutor.
+              <strong>No tutors found.</strong>
+              <br />
+              Try another search or create a tutor.
             </div>
           ) : (
             <table className="data-table">
               <thead>
                 <tr>
+                  <th>Employee No.</th>
                   <th>Tutor</th>
                   <th>Email</th>
-                  <th>Expertise</th>
-                  <th>Rating</th>
-                  <th></th>
+                  <th>Specialization</th>
+                  <th>Experience</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
+
               <tbody>
-                {filtered.map((t, i) => {
-                  const name = pick(t, ["name", "fullName"], "Unnamed tutor");
+                {filtered.map((tutor) => {
+                  const fullName =
+                    `${tutor.name ?? ""} ${tutor.surname ?? ""}`.trim() ||
+                    "Unnamed Tutor";
+
                   return (
-                    <tr key={pick(t, ["id", "tutorId"], i)}>
+                    <tr key={tutor.tutorId}>
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <strong>{tutor.employeeNumber}</strong>
+                      </td>
+
+                      <td>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                          }}
+                        >
                           <div
                             style={{
-                              width: 32,
-                              height: 32,
+                              width: 36,
+                              height: 36,
                               borderRadius: "50%",
                               background: "var(--accent-tint)",
                               color: "var(--accent-ink)",
                               display: "flex",
-                              alignItems: "center",
                               justifyContent: "center",
-                              fontSize: 11.5,
+                              alignItems: "center",
                               fontWeight: 700,
+                              fontSize: 12,
                               flexShrink: 0,
                             }}
                           >
-                            {initialsOf(name)}
+                            {initialsOf(fullName)}
                           </div>
-                          {name}
+
+                          <span>{fullName}</span>
                         </div>
                       </td>
-                      <td className="cell-muted">{pick(t, ["email"], "—")}</td>
-                      <td className="cell-muted">{pick(t, ["subjectExpertise", "expertise"], "—")}</td>
-                      <td className="cell-muted">{pick(t, ["rating"], "Unrated")}</td>
+
+                      <td className="cell-muted">
+                        {tutor.user?.email ?? "—"}
+                      </td>
+
+                      <td className="cell-muted">
+                        {tutor.specialization
+                          ? tutor.specialization
+                              .replace(/_/g, " ")
+                              .toLowerCase()
+                              .replace(/\b\w/g, (c) => c.toUpperCase())
+                          : "Not Specified"}
+                      </td>
+
+                      <td className="cell-muted">
+                        {tutor.yearsExperience}{" "}
+                        {tutor.yearsExperience === 1 ? "Year" : "Years"}
+                      </td>
+
                       <td style={{ textAlign: "right" }}>
-                        <button className="btn btn-danger btn-sm" onClick={() => setToDelete(t)}>
-                          <Trash2 size={13} /> Remove
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => setToDelete(tutor)}
+                        >
+                          <Trash2 size={14} />
+                          Remove
                         </button>
                       </td>
                     </tr>
@@ -144,9 +203,12 @@ export default function Tutors() {
 
       {toDelete && (
         <ConfirmModal
-          title="Remove tutor"
-          message={`This will permanently remove ${pick(toDelete, ["name", "fullName"], "this tutor")} from the platform.`}
-          confirmLabel="Remove tutor"
+          title="Remove Tutor"
+          message={`Are you sure you want to permanently remove ${
+            `${toDelete.name ?? ""} ${toDelete.surname ?? ""}`.trim() ||
+            "this tutor"
+          }?`}
+          confirmLabel="Remove Tutor"
           danger
           loading={deleting}
           onConfirm={confirmDelete}

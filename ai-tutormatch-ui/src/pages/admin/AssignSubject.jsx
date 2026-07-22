@@ -35,7 +35,7 @@ export default function AssignSubject() {
 
       const [tutorData, subjectData] = await Promise.all([
         adminApi.getAllTutors(),
-        studentApi.getAllSubjects(),
+       adminApi.getAllSubjects(),
       ]);
 
       console.log("Tutors:", tutorData);

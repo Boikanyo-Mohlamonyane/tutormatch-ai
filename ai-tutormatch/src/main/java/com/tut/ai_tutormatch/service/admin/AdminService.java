@@ -210,12 +210,26 @@ public class AdminService {
 
     // GET ALL STUDENTS
 
-    public List<Student> getAllStudents() {
-
-        return studentRepo.findAll();
+    public List<StudentDto> getAllStudents() {
+        return studentRepo.findAll()
+                .stream()
+                .map(student -> {
+                    StudentDto dto = new StudentDto();
+                    dto.setStudentId(student.getStudentId());
+                    dto.setStudentNumber(student.getStudentNumber());
+                    dto.setName(student.getName());
+                    dto.setSurname(student.getSurname());
+                    dto.setLearningStyle(student.getLearningStyle());
+                    dto.setAcademicAverage(student.getAcademicAverage());
+                    dto.setRiskLevel(student.getRiskLevel());
+                    dto.setUserId(student.getUser().getUser_id());
+                    return dto;
+                })
+                .toList();
     }
 
-// GET ALL TUTORS
+
+    // GET ALL TUTORS
 // =========================================
     public List<Tutor> getAllTutors() {
 

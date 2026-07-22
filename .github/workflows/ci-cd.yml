@@ -144,14 +144,26 @@ jobs:
           repos=("ai-tutormatch-backend" "ai-tutormatch-frontend" "ai-tutormatch-ml")
           for repo in "${repos[@]}"; do
             echo "Cleaning old tags for $repo..."
-            # Get all tags except 'latest'
-            tags=$(curl -s -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" \
-              "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/$repo/tags/?page_size=100" \
-              | jq -r '.results[].name' | grep -v latest)
+            response=$(curl -s -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" \
+              "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/$repo/tags/?page_size=100")
+
+            tags=$(echo "$response" | jq -r '.results[].name' | grep -v '^latest$' || true)
+
+            if [ -z "$tags" ]; then
+              echo "No old tags found for $repo"
+              continue
+            fi
+
             for tag in $tags; do
               echo "Deleting $repo:$tag"
-              curl -s -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" \
-                -X DELETE "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/$repo/tags/$tag/"
+              status=$(curl -s -o /dev/null -w "%{http_code}" \
+                -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" \
+                -X DELETE "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/$repo/tags/$tag/")
+              if [ "$status" -eq 204 ]; then
+                echo "Successfully deleted $repo:$tag"
+              else
+                echo "Failed to delete $repo:$tag (HTTP $status), skipping..."
+              fi
             done
           done
 

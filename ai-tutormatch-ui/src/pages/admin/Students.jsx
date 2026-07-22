@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Trash2 } from "lucide-react";
 import { adminApi } from "../../api/adminApi";
-import { PageHead, Spinner, ConfirmModal } from "../../components/ui/Common";
-import { pick, initialsOf } from "../../utils/format";
+import {
+  PageHead,
+  Spinner,
+  ConfirmModal,
+} from "../../components/ui/Common";
+import { initialsOf } from "../../utils/format";
 import { useToast } from "../../context/ToastContext";
 
 export default function Students() {
   const toast = useToast();
+
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState([]);
   const [query, setQuery] = useState("");
@@ -19,7 +24,7 @@ export default function Students() {
       const data = await adminApi.getAllStudents();
       setStudents(data || []);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.message || "Failed to load students.");
     } finally {
       setLoading(false);
     }
@@ -32,21 +37,34 @@ export default function Students() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+
     if (!q) return students;
-    return students.filter((s) =>
-      [pick(s, ["name", "fullName"]), pick(s, ["email"])].filter(Boolean).join(" ").toLowerCase().includes(q)
+
+    return students.filter((student) =>
+      [
+        student.studentNumber,
+        `${student.name ?? ""} ${student.surname ?? ""}`,
+        student.user?.email,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
     );
   }, [students, query]);
 
   const confirmDelete = async () => {
+    if (!toDelete) return;
+
     setDeleting(true);
+
     try {
-      await adminApi.deleteStudent(pick(toDelete, ["id", "studentId"]));
-      toast.success("Student removed.");
+      await adminApi.deleteStudent(toDelete.studentId);
+
+      toast.success("Student removed successfully.");
       setToDelete(null);
       load();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.message || "Failed to remove student.");
     } finally {
       setDeleting(false);
     }
@@ -55,14 +73,15 @@ export default function Students() {
   return (
     <div>
       <PageHead
-        eyebrow="Admin · Directory"
+        eyebrow="Admin · Students"
         title="Students"
-        description="Everyone registered as a student on the platform."
+        description="Manage all registered students."
         action={
           <div className="search-box">
             <Search size={15} />
             <input
-              placeholder="Search by name or email"
+              type="text"
+              placeholder="Search by student number, name or email"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -78,53 +97,105 @@ export default function Students() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="table-empty">
-              <strong>No students found</strong>
+              <strong>No students found.</strong>
+              <br />
               Try a different search term.
             </div>
           ) : (
             <table className="data-table">
               <thead>
                 <tr>
+                  <th>Student No.</th>
                   <th>Student</th>
                   <th>Email</th>
-                  <th>Grade / level</th>
-                  <th>Risk level</th>
-                  <th></th>
+                  <th>Academic Average</th>
+                  <th>Risk Level</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
+
               <tbody>
-                {filtered.map((s, i) => {
-                  const name = pick(s, ["name", "fullName"], "Unnamed student");
+                {filtered.map((student) => {
+                  const fullName =
+                    `${student.name ?? ""} ${student.surname ?? ""}`.trim() ||
+                    "Unnamed Student";
+
                   return (
-                    <tr key={pick(s, ["id", "studentId"], i)}>
+                    <tr key={student.studentId}>
+                      {/* Student Number */}
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <strong>{student.studentNumber}</strong>
+                      </td>
+
+                      {/* Student */}
+                      <td>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                          }}
+                        >
                           <div
                             style={{
-                              width: 32,
-                              height: 32,
+                              width: 36,
+                              height: 36,
                               borderRadius: "50%",
                               background: "var(--blue-tint)",
                               color: "var(--blue)",
                               display: "flex",
-                              alignItems: "center",
                               justifyContent: "center",
-                              fontSize: 11.5,
+                              alignItems: "center",
                               fontWeight: 700,
+                              fontSize: 12,
                               flexShrink: 0,
                             }}
                           >
-                            {initialsOf(name)}
+                            {initialsOf(fullName)}
                           </div>
-                          {name}
+
+                          <span>{fullName}</span>
                         </div>
                       </td>
-                      <td className="cell-muted">{pick(s, ["email"], "—")}</td>
-                      <td className="cell-muted">{pick(s, ["gradeLevel", "level"], "—")}</td>
-                      <td className="cell-muted">{pick(s, ["riskLevel"], "Not assessed")}</td>
+
+                      {/* Email */}
+                      <td className="cell-muted">
+                        {student.user?.email ?? "—"}
+                      </td>
+
+                      {/* Academic Average */}
+                      <td className="cell-muted">
+                        {student.academicAverage !== null &&
+                        student.academicAverage !== undefined
+                          ? `${student.academicAverage}%`
+                          : "Not Available"}
+                      </td>
+
+                      {/* Risk */}
+                      <td>
+                        <span
+                          className={`badge ${
+                            student.riskLevel === "HIGH"
+                              ? "badge-danger"
+                              : student.riskLevel === "MEDIUM"
+                              ? "badge-warning"
+                              : student.riskLevel === "LOW"
+                              ? "badge-success"
+                              : "badge-secondary"
+                          }`}
+                        >
+                          {student.riskLevel ?? "Not Assessed"}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
                       <td style={{ textAlign: "right" }}>
-                        <button className="btn btn-danger btn-sm" onClick={() => setToDelete(s)}>
-                          <Trash2 size={13} /> Remove
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => setToDelete(student)}
+                        >
+                          <Trash2 size={14} />
+                          Remove
                         </button>
                       </td>
                     </tr>
@@ -138,9 +209,12 @@ export default function Students() {
 
       {toDelete && (
         <ConfirmModal
-          title="Remove student"
-          message={`This will permanently remove ${pick(toDelete, ["name", "fullName"], "this student")} from the platform.`}
-          confirmLabel="Remove student"
+          title="Remove Student"
+          message={`Are you sure you want to permanently remove ${
+            `${toDelete.name ?? ""} ${toDelete.surname ?? ""}`.trim() ||
+            "this student"
+          }?`}
+          confirmLabel="Remove Student"
           danger
           loading={deleting}
           onConfirm={confirmDelete}
