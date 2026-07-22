@@ -1,108 +1,155 @@
 # 🎓 AI-TutorMatch
 
-AI-TutorMatch is a full-stack intelligent tutor recommendation system that connects students with suitable tutors based on their subjects, availability, and specialization. The platform includes role-based authentication, tutor management, subject management, booking sessions, and AI-powered tutor recommendations.
+AI-TutorMatch is a full-stack intelligent tutor recommendation platform that connects students with suitable tutors based on subject specialization and availability. The system leverages Machine Learning to recommend tutors while providing secure role-based access for Students, Tutors, and Administrators.
+
+The application is built using **Spring Boot**, **React**, **PostgreSQL**, and a **Python Machine Learning service**, and is deployed on **Amazon EC2** using **Docker**, **Docker Compose**, and **Nginx**.
 
 ---
 
-## 🚀 Features
+# 🌐 Live Demo
 
-### 👨‍🎓 Student
-- Register and Login
-- View available subjects
-- Browse tutors by subject
-- Book tutoring sessions
-- View booking history
-- Cancel bookings
-- View academic performance
-- Receive AI tutor recommendations
+🚀 **Application URL**
 
-### 👨‍🏫 Tutor
-- Login
-- Manage profile
-- View assigned subjects
-- View scheduled tutoring sessions
-- Accept or decline bookings
-- Track tutoring statistics
+**http://52.209.138.130/**
 
-### 👨‍💼 Admin
-- Manage students
-- Manage tutors
-- Create, update and delete subjects
-- Assign tutors to subjects
-- View platform statistics
-- Manage users
-- Monitor bookings
+### Production Deployment
 
-### 🤖 AI Features
-- Intelligent tutor recommendation
-- Student performance analysis
-- Tutor matching based on specialization
-- Machine Learning recommendation service
+* ☁️ Amazon EC2
+* 🐳 Docker & Docker Compose
+* 🌐 Nginx Reverse Proxy
+* ☕ Spring Boot Backend
+* ⚛️ React Frontend
+* 🐘 PostgreSQL
+* 🤖 Python Machine Learning Service
+
+---
+
+# 🚀 Features
+
+## 👨‍🎓 Student
+
+* Register and login securely
+* Browse available subjects
+* View tutors by subject
+* Book tutoring sessions
+* View booking history
+* Cancel bookings
+* Track academic performance
+* Receive AI-powered tutor recommendations
+
+---
+
+## 👨‍🏫 Tutor
+
+* Secure login
+* Manage tutor profile
+* View assigned subjects
+* View tutoring sessions
+* Track tutoring activities
+
+---
+
+## 👨‍💼 Administrator
+
+* Manage students
+* Manage tutors
+* Create, update, and delete subjects
+* Assign tutors to subjects
+* View platform statistics
+* Monitor bookings
+* Manage users
+
+---
+
+## 🤖 Artificial Intelligence
+
+* Intelligent tutor recommendation
+* Machine Learning integration
+* Student performance analysis
+* Tutor matching based on specialization
 
 ---
 
 # 🛠 Technology Stack
 
 ## Backend
-- Java 21
-- Spring Boot
-- Spring Security
-- JWT Authentication
-- Spring Data JPA
-- PostgreSQL
-- Maven
 
-## Frontend
-- React
-- Vite
-- Tailwind CSS
-- React Router
-- Axios
-- Lucide Icons
-
-## AI Service
-- Python
-- Flask
-- Scikit-Learn
-- Pandas
-- NumPy
-
-## DevOps
-- Docker
-- Docker Compose
-- Nginx
-- GitHub Actions
-- Terraform (Infrastructure as Code)
+* Java 21
+* Spring Boot
+* Spring Security
+* JWT Authentication
+* Spring Data JPA
+* Hibernate
+* Maven
 
 ---
 
-# 📂 Project Structure
+## Frontend
 
-```
-ai-tutormatch/
+* React
+* Vite
+* Tailwind CSS
+* React Router
+* Axios
+* Lucide React
+
+---
+
+## Database
+
+* PostgreSQL
+
+---
+
+## AI Service
+
+* Python
+* Flask
+* Scikit-learn
+* Pandas
+* NumPy
+
+---
+
+## DevOps & Cloud
+
+* Docker
+* Docker Compose
+* Nginx
+* Amazon EC2
+* Terraform
+* GitHub Actions
+
+---
+
+# 📁 Project Structure
+
+```text
+AI-TutorMatch/
 │
-├── backend/                 # Spring Boot API
-├── ai-tutormatch-ui/        # React Frontend
-├── AI-TutorMatch-ML/        # Python ML Service
+├── backend/                   # Spring Boot REST API
+├── ai-tutormatch-ui/          # React Frontend
+├── AI-TutorMatch-ML/          # Python Machine Learning Service
 ├── docker-compose.yml
 ├── docker-compose.local.yml
+├── docker-compose.prod.yml
 └── README.md
 ```
 
 ---
 
-# 📦 Installation
+# ⚙️ Getting Started
 
-## Clone Repository
+## Clone the Repository
 
 ```bash
-git clone https://github.com/<your-username>/ai-tutormatch.git
-cd ai-tutormatch
+git clone https://github.com/<your-username>/AI-TutorMatch.git
+cd AI-TutorMatch
 ```
 
 ---
 
-# Backend
+## Run Backend
 
 ```bash
 cd backend
@@ -110,7 +157,7 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-Runs on:
+Backend runs on:
 
 ```
 http://localhost:8080
@@ -118,7 +165,7 @@ http://localhost:8080
 
 ---
 
-# Frontend
+## Run Frontend
 
 ```bash
 cd ai-tutormatch-ui
@@ -126,7 +173,7 @@ npm install
 npm run dev
 ```
 
-Runs on:
+Frontend runs on:
 
 ```
 http://localhost:5173
@@ -134,7 +181,7 @@ http://localhost:5173
 
 ---
 
-# AI Service
+## Run AI Service
 
 ```bash
 cd AI-TutorMatch-ML
@@ -148,7 +195,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Runs on:
+AI service runs on:
 
 ```
 http://localhost:5000
@@ -156,21 +203,21 @@ http://localhost:5000
 
 ---
 
-# Docker
+# 🐳 Docker Deployment
 
-Build all services
+Build the containers
 
 ```bash
 docker compose -f docker-compose.local.yml build
 ```
 
-Run
+Run the application
 
 ```bash
-docker compose -f docker-compose.local.yml up
+docker compose -f docker-compose.local.yml up -d
 ```
 
-Stop
+Stop the application
 
 ```bash
 docker compose -f docker-compose.local.yml down
@@ -178,9 +225,40 @@ docker compose -f docker-compose.local.yml down
 
 ---
 
-# API Documentation
+# 🔐 Authentication
 
-After starting the backend
+The platform uses:
+
+* JWT Authentication
+* Role-Based Access Control (RBAC)
+
+### Supported Roles
+
+* ADMIN
+* TUTOR
+* STUDENT
+
+---
+
+# 🗄 Database Schema
+
+Main tables include:
+
+* users
+* students
+* tutors
+* admins
+* subjects
+* tutor_subjects
+* session_bookings
+* tutor_matches
+* student_performance
+
+---
+
+# 📚 API Documentation
+
+Swagger UI is available after starting the backend:
 
 ```
 http://localhost:8080/swagger-ui/index.html
@@ -188,77 +266,46 @@ http://localhost:8080/swagger-ui/index.html
 
 ---
 
-# Authentication
+# 📸 Application Modules
 
-The system uses
-
-- JWT Authentication
-- Role-Based Access Control (RBAC)
-
-Roles
-
-- ADMIN
-- TUTOR
-- STUDENT
-
----
-
-# Database
-
-PostgreSQL
-
-Main Tables
-
-- users
-- students
-- tutors
-- admins
-- subjects
-- tutor_subjects
-- session_bookings
-- student_performance
-- tutor_matches
+* Authentication
+* Student Dashboard
+* Tutor Dashboard
+* Admin Dashboard
+* Subject Management
+* Tutor Management
+* Student Management
+* Session Booking
+* AI Tutor Recommendation
 
 ---
 
-# Screens
+# 🔮 Future Enhancements
 
-- Login
-- Dashboard
-- Student Dashboard
-- Tutor Dashboard
-- Admin Dashboard
-- Subject Management
-- Tutor Management
-- Student Management
-- Booking Management
-- AI Recommendation
+* Email notifications
+* AI chatbot
+* Real-time messaging
+* Video tutoring
+* Attendance tracking
+* Analytics dashboard
+* Mobile application
+* Payment gateway integration
 
 ---
 
-# Future Improvements
-
-- Email Notifications
-- Video Tutoring
-- Chat System
-- Attendance Tracking
-- AI Chatbot
-- Mobile Application
-- Analytics Dashboard
-- Payment Integration
-
----
-
-# Contributors
+# 👨‍💻 Developer
 
 **Boikanyo Mohlamonyane**
 
-Advanced Diploma in Computer Science
-
-Tshwane University of Technology
+* Advanced Diploma in Computer Science
+* Tshwane University of Technology (TUT)
 
 ---
 
-# License
+# 📄 License
 
-This project is for educational and research purposes.
+This project is intended for educational, research, and portfolio purposes.
+
+---
+
+## ⭐ If you found this project interesting, consider giving it a star on GitHub!
