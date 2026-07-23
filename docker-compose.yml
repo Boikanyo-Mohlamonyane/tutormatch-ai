@@ -33,7 +33,7 @@ services:
   ####################################################
   ml:
     build:
-      context: ./ai-tutormatchML
+      context: ./AI-Tutormatch-ML
 
     container_name: ai-ml
 
