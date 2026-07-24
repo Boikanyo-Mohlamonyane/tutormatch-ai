@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Star, CalendarPlus } from "lucide-react";
+
 import { studentApi } from "../../api/studentApi";
 import { useAuth } from "../../context/AuthContext";
 import { PageHead, Spinner, Modal, EmptyState } from "../../components/ui/Common";
@@ -17,7 +18,7 @@ export default function FindTutors() {
   const [tutorSubjects, setTutorSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingTutors, setLoadingTutors] = useState(false);
-  const [booking, setBooking] = useState(null); // tutorSubject entry
+  const [booking, setBooking] = useState(null);
   const [sessionDate, setSessionDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -98,10 +99,17 @@ export default function FindTutors() {
             {loadingSubjects ? (
               <Spinner dark />
             ) : (
-              <select className="input" value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+              <select
+                className="input"
+                value={subjectId}
+                onChange={(e) => setSubjectId(e.target.value)}
+              >
                 <option value="">Select a subject</option>
                 {subjects.map((s, i) => (
-                  <option key={pick(s, ["id", "subjectId"], i)} value={pick(s, ["id", "subjectId"])}>
+                  <option
+                    key={pick(s, ["id", "subjectId"], i)}
+                    value={pick(s, ["id", "subjectId"])}
+                  >
                     {pick(s, ["name", "subjectName"], `Subject #${pick(s, ["id", "subjectId"], i)}`)}
                   </option>
                 ))}
@@ -119,7 +127,10 @@ export default function FindTutors() {
                 <Spinner dark />
               </div>
             ) : tutorSubjects.length === 0 ? (
-              <EmptyState title="No tutors yet" message="No tutor currently teaches this subject. Check back soon." />
+              <EmptyState
+                title="No tutors yet"
+                message="No tutor currently teaches this subject. Check back soon."
+              />
             ) : (
               <table className="data-table">
                 <thead>
@@ -133,6 +144,9 @@ export default function FindTutors() {
                 <tbody>
                   {tutorSubjects.map((entry, i) => {
                     const name = pick(entry, ["tutorName", "name"], `Tutor #${pick(entry, ["tutorId"], i)}`);
+                    const rating = pick(entry, ["rating"], "New");
+                    const expertise = pick(entry, ["subjectExpertise", "expertise"], "—");
+
                     return (
                       <tr key={pick(entry, ["id", "tutorId"], i)}>
                         <td>
@@ -159,12 +173,15 @@ export default function FindTutors() {
                         <td className="cell-muted">
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                             <Star size={12} fill="var(--accent)" color="var(--accent)" />
-                            {pick(entry, ["rating"], "New")}
+                            {rating}
                           </span>
                         </td>
-                        <td className="cell-muted">{pick(entry, ["subjectExpertise", "expertise"], "—")}</td>
+                        <td className="cell-muted">{expertise}</td>
                         <td style={{ textAlign: "right" }}>
-                          <button className="btn btn-accent btn-sm" onClick={() => openBooking(entry)}>
+                          <button
+                            className="btn btn-accent btn-sm"
+                            onClick={() => openBooking(entry)}
+                          >
                             <CalendarPlus size={13} /> Book session
                           </button>
                         </td>
@@ -187,7 +204,11 @@ export default function FindTutors() {
               <button className="btn btn-ghost" onClick={() => setBooking(null)}>
                 Cancel
               </button>
-              <button className="btn btn-accent" onClick={confirmBooking} disabled={submitting}>
+              <button
+                className="btn btn-accent"
+                onClick={confirmBooking}
+                disabled={submitting}
+              >
                 {submitting ? <Spinner /> : "Request session"}
               </button>
             </>

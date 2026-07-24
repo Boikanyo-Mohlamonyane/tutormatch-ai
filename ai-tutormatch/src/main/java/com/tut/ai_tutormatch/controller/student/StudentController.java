@@ -1,6 +1,8 @@
 package com.tut.ai_tutormatch.controller.student;
 
 import com.tut.ai_tutormatch.dto.BookSessionRequest;
+import com.tut.ai_tutormatch.dto.BookingResponse;
+import com.tut.ai_tutormatch.dto.TutorSubjectResponse;
 import com.tut.ai_tutormatch.model.*;
 import com.tut.ai_tutormatch.service.student.StudentService;
 
@@ -47,7 +49,7 @@ public class StudentController {
     // =====================================================
     @GetMapping("/subject/{subjectId}/tutors")
     @PreAuthorize("hasRole('STUDENT')")
-    public List<TutorSubject> getTutorsBySubject(
+    public List<TutorSubjectResponse> getTutorsBySubject(
             @PathVariable Long subjectId
     ) {
 
@@ -79,11 +81,12 @@ public class StudentController {
     // =====================================================
     @GetMapping("/{studentId}/bookings")
     @PreAuthorize("hasRole('STUDENT')")
-    public List<SessionBooking> getStudentBookings(
-            @PathVariable Long studentId
-    ) {
+    public ResponseEntity<List<BookingResponse>> getStudentBookings(
+            @PathVariable Long studentId) {
 
-        return studentService.getStudentBookings(studentId);
+        return ResponseEntity.ok(
+                studentService.getStudentBookings(studentId)
+        );
     }
 
     // =====================================================

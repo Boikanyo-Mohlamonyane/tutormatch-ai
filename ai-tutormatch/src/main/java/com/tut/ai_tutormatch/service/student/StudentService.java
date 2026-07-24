@@ -1,5 +1,7 @@
 package com.tut.ai_tutormatch.service.student;
 
+import com.tut.ai_tutormatch.dto.BookingResponse;
+import com.tut.ai_tutormatch.dto.TutorSubjectResponse;
 import com.tut.ai_tutormatch.model.*;
 import com.tut.ai_tutormatch.repository.*;
 
@@ -48,21 +50,24 @@ public class StudentService {
                         new RuntimeException("Student not found"));
     }
 
-    // =====================================================
-    // GET TUTORS FOR SUBJECT
-    // =====================================================
-    public List<TutorSubject> getTutorsBySubject(Long subjectId) {
+    public List<TutorSubjectResponse> getTutorsBySubject(Long subjectId) {
 
         Subject subject = subjectRepo.findById(subjectId)
                 .orElseThrow(() ->
                         new RuntimeException("Subject not found"));
 
-        return tutorSubjectRepo.findBySubject(subject);
+        return tutorSubjectRepo.findBySubject(subject)
+                .stream()
+                .map(ts -> new TutorSubjectResponse(
+                        ts.getTutor().getTutorId(),
+                        ts.getTutor().getName() + " " + ts.getTutor().getSurname(),
+                        ts.getTutor().getSpecialization().name(),
+                        ts.getTutor().getYearsExperience(),
+                        ts.getSubject().getSubjectId(),
+                        ts.getSubject().getSubjectName()
+                ))
+                .toList();
     }
-
-    // =====================================================
-    // BOOK TUTOR SESSION
-    // =====================================================
     @Transactional
     public String bookSession(
             Long studentId,
@@ -71,7 +76,24 @@ public class StudentService {
             LocalDateTime sessionDate
     ) {
 
-        Student student = studentRepo.findById(studentId)
+        // Validate request
+        if (studentId == null) {
+            throw new RuntimeException("Student ID cannot be null");
+        }
+
+        if (tutorId == null) {
+            throw new RuntimeException("Tutor ID cannot be null");
+        }
+
+        if (subjectId == null) {
+            throw new RuntimeException("Subject ID cannot be null");
+        }
+
+        if (sessionDate == null) {
+            throw new RuntimeException("Session date is required");
+        }
+
+        Student student = studentRepo.findByUserUserId(studentId)
                 .orElseThrow(() ->
                         new RuntimeException("Student not found"));
 
@@ -83,12 +105,10 @@ public class StudentService {
                 .orElseThrow(() ->
                         new RuntimeException("Subject not found"));
 
-        // Prevent booking in the past
         if (sessionDate.isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Session date cannot be in the past");
         }
 
-        // Optional: Prevent duplicate bookings
         boolean exists = bookingRepo.existsByTutorAndSessionDate(
                 tutor,
                 sessionDate
@@ -99,7 +119,6 @@ public class StudentService {
         }
 
         SessionBooking booking = new SessionBooking();
-
         booking.setStudent(student);
         booking.setTutor(tutor);
         booking.setSubject(subject);
@@ -110,16 +129,30 @@ public class StudentService {
 
         return "Session booked successfully";
     }
-    // =====================================================
-    // VIEW STUDENT BOOKINGS
-    // =====================================================
-    public List<SessionBooking> getStudentBookings(Long studentId) {
+
+    public List<BookingResponse> getStudentBookings(Long studentId) {
 
         Student student = studentRepo.findById(studentId)
-                .orElseThrow(() ->
-                        new RuntimeException("Student not found"));
+                .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        return bookingRepo.findByStudent(student);
+        return bookingRepo.findByStudent(student)
+                .stream()
+                .map(booking -> new BookingResponse(
+
+                        booking.getBookingId(),
+
+                        booking.getTutor().getTutorId(),
+                        booking.getTutor().getName() + " " +
+                                booking.getTutor().getSurname(),
+
+                        booking.getSubject().getSubjectId(),
+                        booking.getSubject().getSubjectName(),
+
+                        booking.getSessionDate(),
+
+                        booking.getStatus()
+                ))
+                .toList();
     }
 
     // =====================================================

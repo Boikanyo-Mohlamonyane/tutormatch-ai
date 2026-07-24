@@ -18,4 +18,5 @@ public interface SessionBookingRepository extends JpaRepository<SessionBooking, 
             LocalDateTime sessionDate
     );
 
+
 }

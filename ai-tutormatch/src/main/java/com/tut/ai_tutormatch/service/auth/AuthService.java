@@ -5,9 +5,13 @@ import com.tut.ai_tutormatch.dto.AuthRequest;
 import com.tut.ai_tutormatch.dto.LoginRequest;
 import com.tut.ai_tutormatch.dto.LoginResponse;
 import com.tut.ai_tutormatch.enums.Role;
+import com.tut.ai_tutormatch.model.Admin;
 import com.tut.ai_tutormatch.model.Student;
+import com.tut.ai_tutormatch.model.Tutor;
 import com.tut.ai_tutormatch.model.User;
+import com.tut.ai_tutormatch.repository.AdminRepository;
 import com.tut.ai_tutormatch.repository.StudentRepository;
+import com.tut.ai_tutormatch.repository.TutorRepository;
 import com.tut.ai_tutormatch.repository.UserRepository;
 import com.tut.ai_tutormatch.security.JwtUtil;
 
@@ -28,6 +32,11 @@ public class AuthService {
     @Autowired
     private StudentRepository studentRepo;
 
+    @Autowired
+    private AdminRepository adminRepo;
+
+    @Autowired
+    private TutorRepository tutorRepo;
 
     public String register(AuthRequest auth) {
 
@@ -92,37 +101,49 @@ public class AuthService {
         return "Successfully registered student: "
                 + user.getEmail();
     }
-
     public LoginResponse login(LoginRequest auth) {
 
         User user = userRepo.findByEmail(auth.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
-                );
+                        new RuntimeException("User not found"));
 
-        // CHECK PASSWORD
         if (!passwordConfig.passwordEncoder().matches(
                 auth.getPassword(),
-                user.getPassword()
-        )) {
+                user.getPassword())) {
 
             return new LoginResponse(
+                    null,
                     null,
                     null,
                     "Invalid password"
             );
         }
 
-        // GENERATE JWT TOKEN
+        Long studentId = studentRepo.findByUserUserId(user.getUserId())
+                .map(Student::getStudentId)
+                .orElse(null);
+
+        Long tutorId = tutorRepo.findByUserUserId(user.getUserId())
+                .map(Tutor::getTutorId)
+                .orElse(null);
+
+        Long adminId = adminRepo.findByUserUserId(user.getUserId())
+                .map(Admin::getAdminId)
+                .orElse(null);
+
         String token = JwtUtil.generateToken(
+                user.getUserId(),
+                studentId,
+                tutorId,
+                adminId,
                 user.getEmail(),
                 user.getRole().name()
         );
 
         return new LoginResponse(
+                user.getUserId(),
                 token,
                 user.getRole().name(),
                 "Login successful"
         );
-    }
-}
+    }}

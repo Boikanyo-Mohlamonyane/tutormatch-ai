@@ -30,7 +30,6 @@ export default function Recommend() {
         setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const findMatch = async () => {
@@ -52,29 +51,48 @@ export default function Recommend() {
     }
   };
 
-  const confirmBooking = async (e) => {
-    e.preventDefault();
-    if (!sessionDate) {
-      toast.error("Choose a session date and time.");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await studentApi.bookSession({
-        studentId: user.id,
-        tutorId: pick(tutor, ["id", "tutorId"]),
-        subjectId: Number(subjectId),
-        sessionDate: new Date(sessionDate).toISOString(),
-      });
-      toast.success("Session requested — you'll be notified once it's approved.");
-      setBooking(false);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+ const confirmBooking = async (e) => {
+  e.preventDefault();
+
+  if (!sessionDate) {
+    toast.error("Choose a session date and time.");
+    return;
+  }
+
+  if (!user || user.id == null) {
+    console.error("Logged in user:", user);
+    toast.error("Student ID is missing. Please log out and log in again.");
+    return;
+  }
+
+  if (!tutor) {
+    toast.error("Please select a tutor.");
+    return;
+  }
+
+  const payload = {
+    studentId: Number(user.id),
+    tutorId: Number(tutor.id ?? tutor.tutorId),
+    subjectId: Number(subjectId),
+    sessionDate: new Date(sessionDate).toISOString(),
   };
 
+  console.log("Booking payload:", payload);
+
+  setSubmitting(true);
+
+  try {
+    const response = await studentApi.bookSession(payload);
+    toast.success(response || "Session booked successfully");
+    setBooking(false);
+    setSessionDate("");
+  } catch (err) {
+    console.error(err);
+    toast.error(err.response?.data?.message || err.message);
+  } finally {
+    setSubmitting(false);
+  }
+};
   return (
     <div>
       <PageHead
@@ -91,17 +109,35 @@ export default function Recommend() {
             <>
               <div className="field">
                 <label>Subject</label>
-                <select className="input" value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+                <select
+                  className="input"
+                  value={subjectId}
+                  onChange={(e) => setSubjectId(e.target.value)}
+                >
                   <option value="">Select a subject</option>
                   {subjects.map((s, i) => (
-                    <option key={pick(s, ["id", "subjectId"], i)} value={pick(s, ["id", "subjectId"])}>
+                    <option
+                      key={pick(s, ["id", "subjectId"], i)}
+                      value={pick(s, ["id", "subjectId"])}
+                    >
                       {pick(s, ["name", "subjectName"], `Subject #${pick(s, ["id", "subjectId"], i)}`)}
                     </option>
                   ))}
                 </select>
               </div>
-              <button className="btn btn-accent" onClick={findMatch} disabled={finding} style={{ width: "100%" }}>
-                {finding ? <Spinner /> : <><Sparkles size={15} /> Find my best match</>}
+              <button
+                className="btn btn-accent"
+                onClick={findMatch}
+                disabled={finding}
+                style={{ width: "100%" }}
+              >
+                {finding ? (
+                  <Spinner />
+                ) : (
+                  <>
+                    <Sparkles size={15} /> Find my best match
+                  </>
+                )}
               </button>
             </>
           )}
@@ -115,7 +151,10 @@ export default function Recommend() {
           </div>
           <div className="panel-body">
             {!tutor ? (
-              <EmptyState title="No match found" message="Try a different subject, or browse tutors manually." />
+              <EmptyState
+                title="No match found"
+                message="Try a different subject, or browse tutors manually."
+              />
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 <div
@@ -137,13 +176,22 @@ export default function Recommend() {
                   {initialsOf(pick(tutor, ["name", "fullName"], "Tutor"))}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15 }}>{pick(tutor, ["name", "fullName"], "Tutor")}</div>
-                  <div className="muted" style={{ fontSize: 12.6, display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15 }}>
+                    {pick(tutor, ["name", "fullName"], "Tutor")}
+                  </div>
+                  <div
+                    className="muted"
+                    style={{ fontSize: 12.6, display: "flex", alignItems: "center", gap: 4 }}
+                  >
                     <Star size={12} fill="var(--accent)" color="var(--accent)" />
-                    {pick(tutor, ["rating"], "New")} · {pick(tutor, ["subjectExpertise", "expertise"], "General")}
+                    {pick(tutor, ["rating"], "New")} ·{" "}
+                    {pick(tutor, ["subjectExpertise", "expertise"], "General")}
                   </div>
                 </div>
-                <button className="btn btn-accent btn-sm" onClick={() => setBooking(true)}>
+                <button
+                  className="btn btn-accent btn-sm"
+                  onClick={() => setBooking(true)}
+                >
                   <CalendarPlus size={13} /> Book
                 </button>
               </div>
@@ -161,7 +209,11 @@ export default function Recommend() {
               <button className="btn btn-ghost" onClick={() => setBooking(false)}>
                 Cancel
               </button>
-              <button className="btn btn-accent" onClick={confirmBooking} disabled={submitting}>
+              <button
+                className="btn btn-accent"
+                onClick={confirmBooking}
+                disabled={submitting}
+              >
                 {submitting ? <Spinner /> : "Request session"}
               </button>
             </>

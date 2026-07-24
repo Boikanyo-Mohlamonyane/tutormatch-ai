@@ -222,7 +222,7 @@ public class AdminService {
                     dto.setLearningStyle(student.getLearningStyle());
                     dto.setAcademicAverage(student.getAcademicAverage());
                     dto.setRiskLevel(student.getRiskLevel());
-                    dto.setUserId(student.getUser().getUser_id());
+                    dto.setUserId(student.getUser().getUserId());
                     return dto;
                 })
                 .toList();
