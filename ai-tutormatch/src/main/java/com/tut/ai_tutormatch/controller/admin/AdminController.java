@@ -133,8 +133,7 @@ public class AdminController {
     // =========================================
 
     @GetMapping("/bookings")
-    public List<SessionBooking> getAllBookings() {
-
+    public List<SessionBookingDto> getAllBookings() {
         return adminService.getAllBookings();
     }
 

@@ -1,56 +1,85 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
 import { adminApi } from "../../api/adminApi";
 import { PageHead, Spinner } from "../../components/ui/Common";
 import Badge from "../../components/ui/Badge";
-import { pick, formatDate } from "../../utils/format";
+import { formatDate } from "../../utils/format";
 import { useToast } from "../../context/ToastContext";
 
 const FILTERS = ["ALL", "PENDING", "APPROVED", "REJECTED"];
+const STATUS_OPTIONS = ["PENDING", "APPROVED", "REJECTED"];
 
 export default function Bookings() {
   const toast = useToast();
+
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [filter, setFilter] = useState("ALL");
   const [busyId, setBusyId] = useState(null);
 
-  const load = async () => {
+  const loadBookings = async () => {
     setLoading(true);
+
     try {
       const data = await adminApi.getAllBookings();
-      setBookings(data || []);
+      setBookings(Array.isArray(data) ? data : []);
     } catch (err) {
-      toast.error(err.message);
+      console.error(err);
+
+      toast.error(
+        err.response?.data?.message ||
+          "Failed to load bookings."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadBookings();
   }, []);
 
-  const filtered = useMemo(() => {
+  const filteredBookings = useMemo(() => {
     if (filter === "ALL") return bookings;
-    return bookings.filter((b) => String(pick(b, ["status"], "")).toUpperCase() === filter);
+
+    return bookings.filter(
+      booking =>
+        booking.status?.toUpperCase() === filter
+    );
   }, [bookings, filter]);
 
-  const act = async (booking, action) => {
-    const id = pick(booking, ["id", "bookingId"]);
-    setBusyId(id);
+  const changeStatus = async (booking, newStatus) => {
+    if (booking.status === newStatus) return;
+
+    setBusyId(booking.bookingId);
+
     try {
-      if (action === "approve") {
-        await adminApi.approveBooking(id);
-        toast.success("Booking approved.");
-      } else {
-        await adminApi.rejectBooking(id);
-        toast.success("Booking rejected.");
+      switch (newStatus) {
+        case "APPROVED":
+          await adminApi.approveBooking(booking.bookingId);
+          break;
+
+        case "REJECTED":
+          await adminApi.rejectBooking(booking.bookingId);
+          break;
+
+        case "PENDING":
+          toast.info("Pending status cannot be restored.");
+          return;
+
+        default:
+          return;
       }
-      load();
+
+      toast.success("Booking updated.");
+
+      await loadBookings();
     } catch (err) {
-      toast.error(err.message);
+      console.error(err);
+
+      toast.error(
+        err.response?.data?.message ||
+          "Failed to update booking."
+      );
     } finally {
       setBusyId(null);
     }
@@ -59,18 +88,22 @@ export default function Bookings() {
   return (
     <div>
       <PageHead
-        eyebrow="Admin · Operations"
+        eyebrow="Admin"
         title="Bookings"
-        description="Review, approve, or reject session requests across the platform."
+        description="Manage all tutoring bookings."
         action={
-          <div style={{ display: "flex", gap: 6 }}>
-            {FILTERS.map((f) => (
+          <div style={{ display: "flex", gap: 8 }}>
+            {FILTERS.map(filterName => (
               <button
-                key={f}
-                className={`btn btn-sm ${filter === f ? "btn-primary" : "btn-ghost"}`}
-                onClick={() => setFilter(f)}
+                key={filterName}
+                className={`btn btn-sm ${
+                  filter === filterName
+                    ? "btn-primary"
+                    : "btn-ghost"
+                }`}
+                onClick={() => setFilter(filterName)}
               >
-                {f[0] + f.slice(1).toLowerCase()}
+                {filterName}
               </button>
             ))}
           </div>
@@ -79,71 +112,101 @@ export default function Bookings() {
 
       <div className="panel">
         <div className="panel-body no-pad">
+
           {loading ? (
             <div className="table-empty">
               <Spinner dark />
             </div>
-          ) : filtered.length === 0 ? (
+          ) : filteredBookings.length === 0 ? (
             <div className="table-empty">
-              <strong>No bookings here</strong>
-              Nothing matches this filter right now.
+              <strong>No bookings found</strong>
             </div>
           ) : (
             <table className="data-table">
+
               <thead>
                 <tr>
-                  <th>Student</th>
+                  <th>ID</th>
                   <th>Tutor</th>
+                  <th>Specialization</th>
+                  <th>Experience</th>
                   <th>Subject</th>
-                  <th>Session date</th>
+                  <th>Session Date</th>
                   <th>Status</th>
-                  <th></th>
+                  <th>Change Status</th>
                 </tr>
               </thead>
+
               <tbody>
-                {filtered.map((b, i) => {
-                  const status = String(pick(b, ["status"], "PENDING")).toUpperCase();
-                  const id = pick(b, ["id", "bookingId"], i);
-                  return (
-                    <tr key={id}>
-                      <td>{pick(b, ["studentName"], `Student #${pick(b, ["studentId"], "—")}`)}</td>
-                      <td>{pick(b, ["tutorName"], `Tutor #${pick(b, ["tutorId"], "—")}`)}</td>
-                      <td className="cell-muted">{pick(b, ["subjectName"], "—")}</td>
-                      <td className="cell-muted">{formatDate(pick(b, ["sessionDate", "date"]))}</td>
-                      <td>
-                        <Badge tone={status}>{status}</Badge>
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        {status === "PENDING" ? (
-                          <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                            <button
-                              className="btn btn-ghost btn-sm"
-                              disabled={busyId === id}
-                              onClick={() => act(b, "approve")}
-                              style={{ color: "var(--teal)" }}
-                            >
-                              <Check size={13} /> Approve
-                            </button>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              disabled={busyId === id}
-                              onClick={() => act(b, "reject")}
-                            >
-                              <X size={13} /> Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="faint" style={{ fontSize: 12.5 }}>
-                            No action needed
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+
+                {filteredBookings.map(booking => (
+
+                  <tr key={booking.bookingId}>
+
+                    <td>{booking.bookingId}</td>
+
+                    <td>
+                      {booking.tutor
+                        ? `${booking.tutor.name} ${booking.tutor.surname}`
+                        : "-"}
+                    </td>
+
+                    <td>
+                      {booking.tutor?.specialization ?? "-"}
+                    </td>
+
+                    <td>
+                      {booking.tutor?.yearsExperience ?? 0} years
+                    </td>
+
+                    <td>
+                      {booking.subjectName}
+                    </td>
+
+                    <td>
+                      {formatDate(booking.sessionDate)}
+                    </td>
+
+                    <td>
+                      <Badge tone={booking.status.toLowerCase()}>
+                        {booking.status}
+                      </Badge>
+                    </td>
+
+                    <td>
+
+                      <select
+                        className="input"
+                        value={booking.status}
+                        disabled={busyId === booking.bookingId}
+                        onChange={(e) =>
+                          changeStatus(
+                            booking,
+                            e.target.value
+                          )
+                        }
+                      >
+                        {STATUS_OPTIONS.map(status => (
+                          <option
+                            key={status}
+                            value={status}
+                          >
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+
+                    </td>
+
+                  </tr>
+
+                ))}
+
               </tbody>
+
             </table>
           )}
+
         </div>
       </div>
     </div>

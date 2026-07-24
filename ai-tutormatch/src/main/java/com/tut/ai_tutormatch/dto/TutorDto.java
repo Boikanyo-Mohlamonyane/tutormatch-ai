@@ -7,10 +7,8 @@ import lombok.Data;
 public class TutorDto {
     private Long tutorId;
     private String employeeNumber;
-    private String name;
-    private String surname;
-    private String bio;
+
     private Specialization specialization;
     private Integer yearsExperience;
-    private Long userId;
+
 }

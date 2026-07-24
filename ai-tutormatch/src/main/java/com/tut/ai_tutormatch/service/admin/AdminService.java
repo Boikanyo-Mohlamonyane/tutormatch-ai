@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminService {
@@ -240,10 +241,11 @@ public  List<Subject>getAllSubjects(){
 }
     // =========================================
 // GET ALL BOOKINGS
-// =========================================
-    public List<SessionBooking> getAllBookings() {
-
-        return bookingRepo.findAll();
+    public List<SessionBookingDto> getAllBookings() {
+        return bookingRepo.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     // =========================================
@@ -375,6 +377,24 @@ public  List<Subject>getAllSubjects(){
         bookingRepo.save(booking);
 
         return "Booking rejected successfully";
+    }
+
+
+    private SessionBookingDto convertToDTO(SessionBooking booking) {
+        SessionBookingDto.TutorDTO tutorDTO = new SessionBookingDto.TutorDTO(
+                booking.getTutor().getName(),
+                booking.getTutor().getSurname(),
+                booking.getTutor().getSpecialization().name(),
+                booking.getTutor().getYearsExperience()
+        );
+
+        return new SessionBookingDto(
+                booking.getBookingId(),
+                booking.getSessionDate().toString(),
+                booking.getStatus(),
+                booking.getSubject().getSubjectName(),
+                tutorDTO
+        );
     }
 
 }
